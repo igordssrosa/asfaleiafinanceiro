@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 
 import { connectDatabase } from "./config/database.js";
 import { authRoutes } from "./routes/authRoutes.js";
+import { transactionRoutes } from "./routes/transactionRoutes.js";
 import { validateAuthEnvironment } from "./utils/authTokens.js";
 
 const app = express();
@@ -53,6 +54,21 @@ app.use(
  */
 app.use("/api/auth", authRoutes);
 
+/*
+ * Rotas financeiras:
+ *
+ * GET    /api/transactions
+ * GET    /api/transactions/summary
+ * POST   /api/transactions
+ * PATCH  /api/transactions/:id
+ * DELETE /api/transactions/:id
+ * POST   /api/transactions/:id/restore
+ */
+app.use(
+  "/api/transactions",
+  transactionRoutes,
+);
+
 app.get("/api/health", async (_request, response) => {
   try {
     const database = mongoose.connection.db;
@@ -86,16 +102,8 @@ app.get("/api/health", async (_request, response) => {
 
 async function startServer(): Promise<void> {
   try {
-    /*
-     * Verifica se as variáveis de autenticação,
-     * como JWT_ACCESS_SECRET, estão configuradas.
-     */
     validateAuthEnvironment();
 
-    /*
-     * Só inicia a API depois que o MongoDB
-     * estiver realmente conectado.
-     */
     await connectDatabase();
 
     app.listen(port, () => {
