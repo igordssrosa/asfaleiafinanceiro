@@ -1,13 +1,18 @@
 import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
+
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import mongoose from "mongoose";
+
+import { connectDatabase } from "./config/database.js";
 
 const app = express();
 
 const port = Number(process.env.PORT) || 3333;
+
 const frontendUrl =
   process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -32,13 +37,53 @@ app.use(
   }),
 );
 
-app.get("/api/health", (_request, response) => {
-  response.status(200).json({
-    status: "ok",
-    message: "API da Asfaleia funcionando",
-  });
+app.get("/api/health", async (_request, response) => {
+  try {
+    const database = mongoose.connection.db;
+
+    if (!database) {
+      return response.status(503).json({
+        status: "error",
+        message: "API funcionando, mas o banco está desconectado",
+        database: "disconnected",
+      });
+    }
+
+    await database.admin().command({ ping: 1 });
+
+    return response.status(200).json({
+      status: "ok",
+      message: "API da Asfaleia funcionando",
+      database: "connected",
+      databaseName: mongoose.connection.name,
+    });
+  } catch {
+    return response.status(503).json({
+      status: "error",
+      message: "Não foi possível acessar o MongoDB Atlas",
+      database: "error",
+    });
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor iniciado em http://localhost:${port}`);
-});
+async function startServer(): Promise<void> {
+  try {
+    await connectDatabase();
+
+    app.listen(port, () => {
+      console.log(`Servidor iniciado em http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error("Não foi possível iniciar o servidor.");
+
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(error);
+    }
+
+    process.exit(1);
+  }
+}
+
+void startServer();
