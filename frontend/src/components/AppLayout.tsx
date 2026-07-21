@@ -53,7 +53,6 @@ export function AppLayout() {
             Movimentações
           </NavLink>
 
-
           <NavLink
             to="/lixeira"
             className={({ isActive }) =>
@@ -65,7 +64,17 @@ export function AppLayout() {
             Lixeira
           </NavLink>
 
-          <span>Produtos</span>
+          <NavLink
+            to="/produtos"
+            className={({ isActive }) =>
+              isActive
+                ? "active-navigation"
+                : undefined
+            }
+          >
+            Produtos
+          </NavLink>
+          
           <NavLink
             to="/calculadoras"
             className={({ isActive }) =>

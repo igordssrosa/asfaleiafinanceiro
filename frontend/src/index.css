@@ -834,3 +834,232 @@ p {
     display: grid;
   }
 }
+
+.product-form {
+  display: grid;
+  gap: 18px;
+}
+
+.product-filters {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.5fr)
+    minmax(180px, 1fr)
+    minmax(150px, 0.7fr)
+    auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid #e1e6ee;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.product-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.filter-button {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.product-table {
+  min-width: 1150px;
+}
+
+.product-table td:first-child {
+  min-width: 190px;
+}
+
+.product-status-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.product-active {
+  background: #edf8f0;
+  color: #277443;
+}
+
+.product-inactive {
+  background: #f1f3f6;
+  color: #667085;
+}
+
+@media (max-width: 1100px) {
+  .product-filters {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .product-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .product-filter-actions {
+    display: grid;
+  }
+
+  .filter-button {
+    width: 100%;
+  }
+}
+
+/* Impede páginas internas de ultrapassarem a largura disponível */
+.app-layout {
+  grid-template-columns: 242px minmax(0, 1fr);
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.dashboard-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard-header,
+.metrics-grid,
+.empty-section,
+.product-form,
+.product-filters,
+.form-grid {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.metric-card,
+.form-field {
+  min-width: 0;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.header-tools,
+.header-account-card {
+  max-width: 100%;
+}
+
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/*
+ * Telas de notebook e monitores menores.
+ * No Full HD, o layout original permanece.
+ */
+@media (max-width: 1366px) {
+  .dashboard-content {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .metrics-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .product-filters {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-header {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .header-tools {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .dashboard-content {
+    padding: 24px 20px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid,
+  .product-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .product-filter-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-layout {
+    display: block;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+  }
+
+  .dashboard-content {
+    padding: 20px 16px;
+  }
+
+  .dashboard-header {
+    display: grid;
+  }
+
+  .header-tools {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .header-account-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .product-filter-actions {
+    grid-template-columns: 1fr;
+  }
+}

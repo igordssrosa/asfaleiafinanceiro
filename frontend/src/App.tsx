@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PricingCalculatorPage } from "./pages/PricingCalculatorPage";
+import { ProductsPage } from "./pages/ProductsPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { TrashPage } from "./pages/TrashPage";
 
@@ -40,6 +41,11 @@ function App() {
         <Route
           path="/lixeira"
           element={<TrashPage />}
+        />
+
+        <Route
+          path="/produtos"
+          element={<ProductsPage />}
         />
 
         <Route
