@@ -20,6 +20,10 @@ import {
   productRoutes,
 } from "./routes/productRoutes.js";
 
+import {
+  reportRoutes,
+} from "./routes/reportRoutes.js";
+
 const app = express();
 
 const port = Number(process.env.PORT) || 3333;
@@ -85,6 +89,11 @@ app.use(
 app.use(
   "/api/products",
   productRoutes,
+);
+
+app.use(
+  "/api/reports",
+  reportRoutes,
 );
 
 app.get("/api/health", async (_request, response) => {

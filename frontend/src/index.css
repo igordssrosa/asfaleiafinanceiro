@@ -1063,3 +1063,72 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+.trash-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 26px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e1e6ee;
+}
+
+.trash-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #697386;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trash-tab:hover {
+  background: #f3f6fa;
+  color: #344057;
+}
+
+.trash-tab-active {
+  border-color: #d6deea;
+  background: #edf2f8;
+  color: #3d587f;
+}
+
+.trash-tab-active:hover {
+  background: #e8eef6;
+  color: #3d587f;
+}
+
+.trash-tab-count {
+  display: grid;
+  min-width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #556d93;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.trash-section-heading {
+  margin-bottom: 20px;
+}
+
+.trash-table {
+  min-width: 950px;
+}
+
+@media (max-width: 720px) {
+  .trash-tabs {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .trash-tab {
+    justify-content: center;
+  }
+}
