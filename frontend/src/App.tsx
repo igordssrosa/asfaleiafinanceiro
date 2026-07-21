@@ -8,6 +8,7 @@ import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PricingCalculatorPage } from "./pages/PricingCalculatorPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { TrashPage } from "./pages/TrashPage";
 
@@ -39,6 +40,11 @@ function App() {
         <Route
           path="/lixeira"
           element={<TrashPage />}
+        />
+
+        <Route
+          path="/calculadoras"
+          element={<PricingCalculatorPage />}
         />
       </Route>
 
