@@ -118,3 +118,21 @@ export async function restoreTransactionRequest(
     },
   );
 }
+
+export async function listDeletedTransactionsRequest(
+  page = 1,
+  limit = 100,
+): Promise<ListTransactionsResponse> {
+  const searchParams =
+    new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+
+  return apiFetch<ListTransactionsResponse>(
+    `/transactions/trash?${searchParams.toString()}`,
+    {
+      method: "GET",
+    },
+  );
+}

@@ -7,10 +7,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 
 export function AppLayout() {
-  const {
-    user,
-    logout,
-  } = useAuth();
+  const { logout } = useAuth();
 
   const navigate = useNavigate();
 
@@ -56,15 +53,21 @@ export function AppLayout() {
             Movimentações
           </NavLink>
 
+          <NavLink
+            to="/lixeira"
+            className={({ isActive }) =>
+              isActive
+                ? "active-navigation"
+                : undefined
+            }
+          >
+            Lixeira
+          </NavLink>
+
           <span>Produtos</span>
           <span>Calculadoras</span>
           <span>Relatórios</span>
         </nav>
-
-        <div className="sidebar-user">
-          <strong>{user?.name}</strong>
-          <span>{user?.email}</span>
-        </div>
 
         <button
           className="secondary-button"

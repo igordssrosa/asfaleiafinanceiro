@@ -4,6 +4,7 @@ import {
   createTransaction,
   deleteTransaction,
   getMonthlySummary,
+  listDeletedTransactions,
   listTransactions,
   restoreTransaction,
   updateTransaction,
@@ -21,6 +22,11 @@ transactionRoutes.use(requireAuth);
 transactionRoutes.get(
   "/summary",
   getMonthlySummary,
+);
+
+transactionRoutes.get(
+  "/trash",
+  listDeletedTransactions,
 );
 
 transactionRoutes.get(

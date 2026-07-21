@@ -30,6 +30,8 @@ import {
   getCurrentMonth,
 } from "../utils/format";
 
+import { HeaderAccount } from "../components/HeaderAccount";
+
 type TransactionFormState = {
   type: TransactionType;
   description: string;
@@ -331,31 +333,33 @@ export function TransactionsPage() {
 
   return (
     <>
-      <header className="dashboard-header">
-        <div>
-          <p className="eyebrow">
-            Controle financeiro
-          </p>
+<header className="dashboard-header">
+  <div>
+    <p className="eyebrow">
+      Controle financeiro
+    </p>
 
-          <h1>Movimentações</h1>
+    <h1>Movimentações</h1>
 
-          <p className="muted-text">
-            Cadastre receitas e despesas da Asfaleia.
-          </p>
-        </div>
+    <p className="muted-text">
+      Cadastre receitas e despesas da Asfaleia.
+    </p>
+  </div>
 
-        <label className="month-field">
-          <span>Mês visualizado</span>
+  <HeaderAccount>
+    <label className="month-field header-month-field">
+      <span>Mês visualizado</span>
 
-          <input
-            type="month"
-            value={month}
-            onChange={(event) =>
-              setMonth(event.target.value)
-            }
-          />
-        </label>
-      </header>
+      <input
+        type="month"
+        value={month}
+        onChange={(event) =>
+          setMonth(event.target.value)
+        }
+      />
+    </label>
+  </HeaderAccount>
+</header>
 
       <section className="metrics-grid compact-metrics">
         <article className="metric-card">

@@ -23,6 +23,8 @@ import {
   getCurrentMonth,
 } from "../utils/format";
 
+import { HeaderAccount } from "../components/HeaderAccount";
+
 const emptySummary: MonthlySummary = {
   month: getCurrentMonth(),
   income: 0,
@@ -134,17 +136,19 @@ export function DashboardPage() {
           </p>
         </div>
 
-        <label className="month-field">
-          <span>Mês</span>
+<HeaderAccount>
+  <label className="month-field header-month-field">
+    <span>Mês visualizado</span>
 
-          <input
-            type="month"
-            value={month}
-            onChange={(event) =>
-              setMonth(event.target.value)
-            }
-          />
-        </label>
+    <input
+      type="month"
+      value={month}
+      onChange={(event) =>
+        setMonth(event.target.value)
+      }
+    />
+  </label>
+</HeaderAccount>
       </header>
 
       {errorMessage && (

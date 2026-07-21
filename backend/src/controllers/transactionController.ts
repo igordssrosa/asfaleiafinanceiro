@@ -11,6 +11,7 @@ import {
   type ITransaction,
 } from "../models/Transaction.js";
 
+
 type TransactionFilter = {
   deletedAt: null;
 
@@ -69,7 +70,7 @@ const moneySchema = z
     (value) =>
       Math.abs(
         value * 100 -
-          Math.round(value * 100),
+        Math.round(value * 100),
       ) < 0.000001,
     "O valor deve possuir no máximo duas casas decimais.",
   );
@@ -183,6 +184,21 @@ const listTransactionsSchema = z.object({
     .max(60)
     .optional(),
 
+  page: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(1),
+
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(20),
+});
+
+const listTrashSchema = z.object({
   page: z.coerce
     .number()
     .int()
@@ -764,9 +780,9 @@ export async function updateTransaction(
 
   const updateData:
     Record<string, unknown> = {
-      updatedBy:
-        userId,
-    };
+    updatedBy:
+      userId,
+  };
 
   if (
     data.type !== undefined
@@ -951,9 +967,7 @@ export async function restoreTransaction(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(
-      request,
-    );
+    getAuthenticatedUserId(request);
 
   if (!userId) {
     response.status(401).json({
@@ -964,8 +978,7 @@ export async function restoreTransaction(
     return;
   }
 
-  const id =
-    getRouteId(request);
+  const id = getRouteId(request);
 
   if (
     !id ||
@@ -980,34 +993,25 @@ export async function restoreTransaction(
   }
 
   const transaction =
-    await TransactionModel
-      .findOneAndUpdate(
-        {
-          _id:
-            id,
+    await TransactionModel.findOneAndUpdate(
+      {
+        _id: id,
 
-          deletedAt: {
-            $ne:
-              null,
-          },
+        deletedAt: {
+          $ne: null,
         },
-        {
-          $set: {
-            deletedAt:
-              null,
-
-            deletedBy:
-              null,
-
-            updatedBy:
-              userId,
-          },
+      },
+      {
+        $set: {
+          deletedAt: null,
+          deletedBy: null,
+          updatedBy: userId,
         },
-        {
-          returnDocument:
-            "after",
-        },
-      );
+      },
+      {
+        returnDocument: "after",
+      },
+    );
 
   if (!transaction) {
     response.status(404).json({
@@ -1023,8 +1027,79 @@ export async function restoreTransaction(
       "Movimentação restaurada com sucesso.",
 
     transaction:
-      serializeTransaction(
-        transaction,
+      serializeTransaction(transaction),
+  });
+}
+
+export async function listDeletedTransactions(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const parsedQuery =
+    listTrashSchema.safeParse(
+      request.query,
+    );
+
+  if (!parsedQuery.success) {
+    response.status(400).json({
+      message:
+        "Filtros da lixeira inválidos.",
+
+      errors:
+        parsedQuery.error
+          .flatten()
+          .fieldErrors,
+    });
+
+    return;
+  }
+
+  const {
+    page,
+    limit,
+  } = parsedQuery.data;
+
+  const skip =
+    (page - 1) * limit;
+
+  const filter = {
+    deletedAt: {
+      $ne: null,
+    },
+  };
+
+  const [
+    transactions,
+    total,
+  ] = await Promise.all([
+    TransactionModel.find(filter)
+      .sort({
+        deletedAt: -1,
+      })
+      .skip(skip)
+      .limit(limit),
+
+    TransactionModel.countDocuments(
+      filter,
+    ),
+  ]);
+
+  response.status(200).json({
+    transactions:
+      transactions.map(
+        (transaction) =>
+          serializeTransaction(
+            transaction,
+          ),
       ),
+
+    pagination: {
+      page,
+      limit,
+      total,
+
+      totalPages:
+        Math.ceil(total / limit),
+    },
   });
 }

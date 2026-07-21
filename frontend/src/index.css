@@ -588,3 +588,99 @@ p {
     width: 100%;
   }
 }
+
+.header-tools {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.header-account-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 265px;
+  min-width: 265px;
+  padding: 10px 14px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: #ffffff;
+  box-sizing: border-box;
+  box-shadow:
+    0 2px 8px rgba(23, 32, 51, 0.04);
+}
+
+
+.header-account-avatar {
+  display: grid;
+  flex: 0 0 38px;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #e9eef6;
+  color: #405a82;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+
+.header-account-details {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+}
+
+.header-account-details strong {
+  color: #172033;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.header-account-details span {
+  color: #697386;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.header-month-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-month-field > span {
+  white-space: nowrap;
+}
+
+.header-month-field input {
+  min-width: 184px;
+}
+
+@media (max-width: 720px) {
+  .header-tools {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .header-account-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .header-month-field {
+    display: grid;
+    gap: 7px;
+  }
+
+  .header-month-field input {
+    width: 100%;
+    min-width: 0;
+  }
+}

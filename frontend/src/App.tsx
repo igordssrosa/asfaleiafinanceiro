@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
+import { TrashPage } from "./pages/TrashPage";
 
 function App() {
   return (
@@ -33,6 +34,11 @@ function App() {
         <Route
           path="/movimentacoes"
           element={<TransactionsPage />}
+        />
+
+        <Route
+          path="/lixeira"
+          element={<TrashPage />}
         />
       </Route>
 
