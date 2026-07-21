@@ -8,6 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "test:db": "tsx src/scripts/testDatabase.ts",
     "seed:owners": "tsx src/scripts/createOwners.ts",
+    "reset:owner-password": "tsx src/scripts/resetOwnerPassword.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },

@@ -1,46 +1,50 @@
-import { useEffect, useState } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 
-type ApiResponse = {
-  status: string;
-  message: string;
-};
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DashboardPage } from "./pages/DashboardPage";
+import { LoginPage } from "./pages/LoginPage";
 
 function App() {
-  const [message, setMessage] = useState("Conectando ao servidor...");
-
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
-
-    async function checkApi() {
-      try {
-        const response = await fetch(`${apiUrl}/health`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao acessar o servidor");
-        }
-
-        const data: ApiResponse = await response.json();
-        setMessage(data.message);
-      } catch {
-        setMessage("Não foi possível conectar ao backend");
-      }
-    }
-
-    checkApi();
-  }, []);
-
   return (
-    <main
-      style={{
-        fontFamily: "Arial, sans-serif",
-        padding: "40px",
-      }}
-    >
-      <h1>Sistema Financeiro Asfaleia</h1>
-      <p>{message}</p>
-    </main>
+    <Routes>
+      <Route
+        path="/login"
+        element={<LoginPage />}
+      />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/"
+        element={
+          <Navigate
+            to="/dashboard"
+            replace
+          />
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to="/dashboard"
+            replace
+          />
+        }
+      />
+    </Routes>
   );
 }
 
