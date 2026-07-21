@@ -8,6 +8,8 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 
 import { connectDatabase } from "./config/database.js";
+import { authRoutes } from "./routes/authRoutes.js";
+import { validateAuthEnvironment } from "./utils/authTokens.js";
 
 const app = express();
 
@@ -34,8 +36,22 @@ app.use(
     limit: 200,
     standardHeaders: true,
     legacyHeaders: false,
+    message: {
+      message:
+        "Muitas requisições. Aguarde alguns minutos e tente novamente.",
+    },
   }),
 );
+
+/*
+ * Rotas de autenticação:
+ *
+ * POST /api/auth/login
+ * POST /api/auth/refresh
+ * POST /api/auth/logout
+ * GET  /api/auth/me
+ */
+app.use("/api/auth", authRoutes);
 
 app.get("/api/health", async (_request, response) => {
   try {
@@ -44,7 +60,8 @@ app.get("/api/health", async (_request, response) => {
     if (!database) {
       return response.status(503).json({
         status: "error",
-        message: "API funcionando, mas o banco está desconectado",
+        message:
+          "API funcionando, mas o banco está desconectado",
         database: "disconnected",
       });
     }
@@ -60,7 +77,8 @@ app.get("/api/health", async (_request, response) => {
   } catch {
     return response.status(503).json({
       status: "error",
-      message: "Não foi possível acessar o MongoDB Atlas",
+      message:
+        "Não foi possível acessar o MongoDB Atlas",
       database: "error",
     });
   }
@@ -68,13 +86,27 @@ app.get("/api/health", async (_request, response) => {
 
 async function startServer(): Promise<void> {
   try {
+    /*
+     * Verifica se as variáveis de autenticação,
+     * como JWT_ACCESS_SECRET, estão configuradas.
+     */
+    validateAuthEnvironment();
+
+    /*
+     * Só inicia a API depois que o MongoDB
+     * estiver realmente conectado.
+     */
     await connectDatabase();
 
     app.listen(port, () => {
-      console.log(`Servidor iniciado em http://localhost:${port}`);
+      console.log(
+        `Servidor iniciado em http://localhost:${port}`,
+      );
     });
   } catch (error) {
-    console.error("Não foi possível iniciar o servidor.");
+    console.error(
+      "Não foi possível iniciar o servidor.",
+    );
 
     if (error instanceof Error) {
       console.error(error.message);
