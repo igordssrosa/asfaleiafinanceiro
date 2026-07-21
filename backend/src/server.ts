@@ -16,6 +16,10 @@ import {
   pricingCalculationRoutes,
 } from "./routes/pricingCalculationRoutes.js";
 
+import {
+  productRoutes,
+} from "./routes/productRoutes.js";
+
 const app = express();
 
 const port = Number(process.env.PORT) || 3333;
@@ -76,6 +80,11 @@ app.use(
 app.use(
   "/api/pricing-calculations",
   pricingCalculationRoutes,
+);
+
+app.use(
+  "/api/products",
+  productRoutes,
 );
 
 app.get("/api/health", async (_request, response) => {
