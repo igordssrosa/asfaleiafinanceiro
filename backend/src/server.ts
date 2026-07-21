@@ -12,6 +12,10 @@ import { authRoutes } from "./routes/authRoutes.js";
 import { transactionRoutes } from "./routes/transactionRoutes.js";
 import { validateAuthEnvironment } from "./utils/authTokens.js";
 
+import {
+  pricingCalculationRoutes,
+} from "./routes/pricingCalculationRoutes.js";
+
 const app = express();
 
 const port = Number(process.env.PORT) || 3333;
@@ -67,6 +71,11 @@ app.use("/api/auth", authRoutes);
 app.use(
   "/api/transactions",
   transactionRoutes,
+);
+
+app.use(
+  "/api/pricing-calculations",
+  pricingCalculationRoutes,
 );
 
 app.get("/api/health", async (_request, response) => {

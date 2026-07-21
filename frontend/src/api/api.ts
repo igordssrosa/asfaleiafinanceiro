@@ -72,7 +72,7 @@ export async function apiFetch<T>(
       ...requestOptions,
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=UTF-8",
         ...headers,
       },
     });
