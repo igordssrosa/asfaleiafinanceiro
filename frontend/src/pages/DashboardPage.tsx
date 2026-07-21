@@ -1,114 +1,307 @@
 import {
-  useNavigate,
-} from "react-router-dom";
+  useEffect,
+  useState,
+} from "react";
+
+import { ApiError } from "../api/api";
+
+import {
+  getMonthlySummaryRequest,
+  listTransactionsRequest,
+} from "../api/transactions";
 
 import { useAuth } from "../contexts/AuthContext";
 
+import type {
+  MonthlySummary,
+  Transaction,
+} from "../types/transaction";
+
+import {
+  formatCurrency,
+  formatDate,
+  getCurrentMonth,
+} from "../utils/format";
+
+const emptySummary: MonthlySummary = {
+  month: getCurrentMonth(),
+  income: 0,
+  expense: 0,
+  balance: 0,
+  pendingIncome: 0,
+  pendingExpense: 0,
+  transactionCount: 0,
+};
+
+function getTypeLabel(
+  transaction: Transaction,
+): string {
+  return transaction.type === "income"
+    ? "Receita"
+    : "Despesa";
+}
+
 export function DashboardPage() {
-  const {
-    user,
-    logout,
-  } = useAuth();
+  const { user } = useAuth();
 
-  const navigate = useNavigate();
+  const [month, setMonth] =
+    useState(getCurrentMonth());
 
-  async function handleLogout(): Promise<void> {
-    await logout();
+  const [summary, setSummary] =
+    useState<MonthlySummary>(
+      emptySummary,
+    );
 
-    navigate("/login", {
-      replace: true,
-    });
-  }
+  const [recentTransactions, setRecentTransactions] =
+    useState<Transaction[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboard(): Promise<void> {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const [
+          summaryResponse,
+          transactionsResponse,
+        ] = await Promise.all([
+          getMonthlySummaryRequest(month),
+
+          listTransactionsRequest({
+            month,
+            page: 1,
+            limit: 5,
+          }),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSummary(summaryResponse);
+
+        setRecentTransactions(
+          transactionsResponse.transactions,
+        );
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof ApiError) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage(
+            "Não foi possível carregar o dashboard.",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [month]);
 
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
+    <>
+      <header className="dashboard-header">
         <div>
-          <p className="eyebrow">Asfaleia</p>
-          <h2>Financeiro</h2>
+          <p className="eyebrow">
+            Painel financeiro
+          </p>
+
+          <h1>
+            Olá, {user?.name}
+          </h1>
+
+          <p className="muted-text">
+            Resumo financeiro da Asfaleia.
+          </p>
         </div>
 
-        <nav aria-label="Menu principal">
-          <a
-            href="/dashboard"
-            className="active-navigation"
-          >
-            Visão geral
-          </a>
+        <label className="month-field">
+          <span>Mês</span>
 
-          <span>Movimentações</span>
-          <span>Produtos</span>
-          <span>Calculadoras</span>
-          <span>Relatórios</span>
-        </nav>
+          <input
+            type="month"
+            value={month}
+            onChange={(event) =>
+              setMonth(event.target.value)
+            }
+          />
+        </label>
+      </header>
 
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={handleLogout}
+      {errorMessage && (
+        <div
+          className="error-message"
+          role="alert"
         >
-          Sair
-        </button>
-      </aside>
+          {errorMessage}
+        </div>
+      )}
 
-      <main className="dashboard-content">
-        <header className="dashboard-header">
+      <section className="metrics-grid">
+        <article className="metric-card">
+          <span>Receitas recebidas</span>
+
+          <strong>
+            {isLoading
+              ? "Carregando..."
+              : formatCurrency(summary.income)}
+          </strong>
+
+          <small>
+            Valores concluídos no mês
+          </small>
+        </article>
+
+        <article className="metric-card">
+          <span>Despesas pagas</span>
+
+          <strong>
+            {isLoading
+              ? "Carregando..."
+              : formatCurrency(summary.expense)}
+          </strong>
+
+          <small>
+            Valores concluídos no mês
+          </small>
+        </article>
+
+        <article className="metric-card">
+          <span>Resultado do mês</span>
+
+          <strong>
+            {isLoading
+              ? "Carregando..."
+              : formatCurrency(summary.balance)}
+          </strong>
+
+          <small>
+            Receitas menos despesas
+          </small>
+        </article>
+
+        <article className="metric-card">
+          <span>Pendências</span>
+
+          <strong>
+            {isLoading
+              ? "Carregando..."
+              : formatCurrency(
+                  summary.pendingIncome -
+                    summary.pendingExpense,
+                )}
+          </strong>
+
+          <small>
+            A receber menos a pagar
+          </small>
+        </article>
+      </section>
+
+      <section className="empty-section">
+        <div className="section-heading">
           <div>
-            <p className="eyebrow">
-              Painel financeiro
-            </p>
+            <h2>Movimentações recentes</h2>
 
-            <h1>
-              Olá, {user?.name}
-            </h1>
-
-            <p className="muted-text">
-              Seu acesso está autenticado e protegido.
+            <p>
+              {summary.transactionCount} movimentações
+              cadastradas no mês.
             </p>
           </div>
+        </div>
 
-          <div className="user-badge">
-            <strong>{user?.name}</strong>
-            <span>{user?.email}</span>
-          </div>
-        </header>
-
-        <section className="metrics-grid">
-          <article className="metric-card">
-            <span>Receitas do mês</span>
-            <strong>R$ 0,00</strong>
-            <small>Nenhuma receita cadastrada</small>
-          </article>
-
-          <article className="metric-card">
-            <span>Despesas do mês</span>
-            <strong>R$ 0,00</strong>
-            <small>Nenhuma despesa cadastrada</small>
-          </article>
-
-          <article className="metric-card">
-            <span>Resultado do mês</span>
-            <strong>R$ 0,00</strong>
-            <small>Receitas menos despesas</small>
-          </article>
-
-          <article className="metric-card">
-            <span>Saldo acumulado</span>
-            <strong>R$ 0,00</strong>
-            <small>Saldo financeiro atual</small>
-          </article>
-        </section>
-
-        <section className="empty-section">
-          <h2>Movimentações recentes</h2>
-
+        {isLoading ? (
+          <p>Carregando movimentações...</p>
+        ) : recentTransactions.length === 0 ? (
           <p>
-            As movimentações financeiras aparecerão
-            aqui depois que criarmos o módulo de
-            receitas e despesas.
+            Nenhuma movimentação cadastrada neste mês.
           </p>
-        </section>
-      </main>
-    </div>
+        ) : (
+          <div className="table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Descrição</th>
+                  <th>Tipo</th>
+                  <th>Categoria</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {recentTransactions.map(
+                  (transaction) => (
+                    <tr key={transaction.id}>
+                      <td>
+                        {formatDate(
+                          transaction.date,
+                        )}
+                      </td>
+
+                      <td>
+                        {transaction.description}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`type-badge ${
+                            transaction.type ===
+                            "income"
+                              ? "type-income"
+                              : "type-expense"
+                          }`}
+                        >
+                          {getTypeLabel(
+                            transaction,
+                          )}
+                        </span>
+                      </td>
+
+                      <td>
+                        {transaction.category}
+                      </td>
+
+                      <td>
+                        {transaction.status ===
+                        "completed"
+                          ? "Concluído"
+                          : "Pendente"}
+                      </td>
+
+                      <td>
+                        {formatCurrency(
+                          transaction.amount,
+                        )}
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
