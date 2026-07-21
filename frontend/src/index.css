@@ -1132,3 +1132,343 @@ p {
     justify-content: center;
   }
 }
+
+.report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.report-toolbar > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.report-toolbar strong {
+  color: #172033;
+}
+
+.report-toolbar span {
+  color: #697386;
+  font-size: 13px;
+}
+
+.report-export-button {
+  flex: 0 0 auto;
+  min-width: 145px;
+}
+
+.report-status-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.report-metrics-grid {
+  margin-bottom: 22px;
+}
+
+.report-status-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.report-status-card span {
+  color: #697386;
+  font-size: 13px;
+}
+
+.report-status-card strong {
+  color: #172033;
+  font-size: 22px;
+}
+
+.report-categories-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.report-category-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #d8dee8;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.report-category-list {
+  display: grid;
+  gap: 19px;
+}
+
+.report-category-item {
+  display: grid;
+  gap: 10px;
+}
+
+.report-category-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.report-category-header > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.report-category-header strong {
+  overflow: hidden;
+  color: #172033;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-category-header span {
+  color: #697386;
+  font-size: 12px;
+}
+
+.report-category-values {
+  justify-items: end;
+  flex: 0 0 auto;
+}
+
+.report-progress-track,
+.report-bar-track {
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf1f6;
+}
+
+.report-progress-track {
+  height: 8px;
+}
+
+.report-progress-value {
+  height: 100%;
+  border-radius: inherit;
+  background: #556d93;
+}
+
+.report-empty-state {
+  display: grid;
+  min-height: 100px;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed #cfd6e0;
+  border-radius: 10px;
+  color: #697386;
+  text-align: center;
+}
+
+.report-comparison-section {
+  margin-top: 22px;
+}
+
+.report-comparison-heading {
+  align-items: end;
+}
+
+.comparison-months-field {
+  display: grid;
+  gap: 7px;
+  color: #344057;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.comparison-months-field select {
+  min-width: 180px;
+  border: 1px solid #cfd6e0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #172033;
+  padding: 10px 12px;
+}
+
+.report-comparison-list {
+  display: grid;
+}
+
+.report-comparison-row {
+  display: grid;
+  grid-template-columns:
+    150px minmax(300px, 1fr) 130px;
+  align-items: center;
+  gap: 24px;
+  padding: 19px 0;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.report-comparison-row:last-child {
+  border-bottom: 0;
+}
+
+.report-comparison-month {
+  display: grid;
+  gap: 5px;
+}
+
+.report-comparison-month strong {
+  color: #172033;
+  text-transform: capitalize;
+}
+
+.report-comparison-month span {
+  color: #697386;
+  font-size: 12px;
+}
+
+.report-comparison-bars {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.report-bar-row {
+  display: grid;
+  grid-template-columns:
+    65px minmax(100px, 1fr) 100px;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-bar-row > span {
+  color: #697386;
+  font-size: 12px;
+}
+
+.report-bar-row > strong {
+  color: #344057;
+  font-size: 13px;
+  text-align: right;
+}
+
+.report-bar-track {
+  height: 9px;
+}
+
+.report-bar-value {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.report-income-bar {
+  background: #4c8b62;
+}
+
+.report-expense-bar {
+  background: #c26565;
+}
+
+.report-comparison-balance {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.report-comparison-balance span {
+  color: #697386;
+  font-size: 12px;
+}
+
+.positive-value {
+  color: #277443;
+}
+
+.negative-value {
+  color: #a22f2f;
+}
+
+
+@media (max-width: 1200px) {
+  .report-status-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .report-comparison-row {
+    grid-template-columns:
+      130px minmax(250px, 1fr) 120px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .report-categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-status-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .report-comparison-row {
+    grid-template-columns: 1fr;
+  }
+
+  .report-comparison-balance {
+    justify-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .report-toolbar {
+    display: grid;
+  }
+
+  .report-export-button {
+    width: 100%;
+  }
+
+  .report-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-category-header {
+    display: grid;
+  }
+
+  .report-category-values {
+    justify-items: start;
+  }
+
+  .report-comparison-heading {
+    display: grid;
+  }
+
+  .comparison-months-field,
+  .comparison-months-field select {
+    width: 100%;
+  }
+
+  .report-bar-row {
+    grid-template-columns:
+      55px minmax(80px, 1fr);
+  }
+
+  .report-bar-row > strong {
+    grid-column: 2;
+    text-align: left;
+  }
+}

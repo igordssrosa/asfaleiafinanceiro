@@ -75,7 +75,16 @@ export function AppLayout() {
             Calculadoras
           </NavLink>
 
-          <span>Relatórios</span>
+          <NavLink
+            to="/relatorios"
+            className={({ isActive }) =>
+              isActive
+                ? "active-navigation"
+                : undefined
+            }
+          >
+            Relatórios
+          </NavLink>
 
           <NavLink
             to="/lixeira"

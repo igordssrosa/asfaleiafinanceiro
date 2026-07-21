@@ -52,3 +52,40 @@ export function getCurrentDate(): string {
 
   return `${year}-${month}-${day}`;
 }
+
+export function formatMonth(
+  value: string,
+): string {
+  const [
+    yearText,
+    monthText,
+  ] = value.split("-");
+
+  const year =
+    Number(yearText);
+
+  const month =
+    Number(monthText);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month)
+  ) {
+    return value;
+  }
+
+  const date =
+    new Date(
+      year,
+      month - 1,
+      1,
+    );
+
+  return new Intl.DateTimeFormat(
+    "pt-BR",
+    {
+      month: "long",
+      year: "numeric",
+    },
+  ).format(date);
+}

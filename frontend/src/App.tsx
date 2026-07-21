@@ -12,6 +12,7 @@ import { PricingCalculatorPage } from "./pages/PricingCalculatorPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { TrashPage } from "./pages/TrashPage";
+import { ReportsPage } from "./pages/ReportsPage";
 
 function App() {
   return (
@@ -51,6 +52,11 @@ function App() {
         <Route
           path="/calculadoras"
           element={<PricingCalculatorPage />}
+        />
+
+        <Route
+          path="/relatorios"
+          element={<ReportsPage />}
         />
       </Route>
 
