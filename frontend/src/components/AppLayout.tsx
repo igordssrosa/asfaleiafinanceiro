@@ -1,33 +1,9 @@
 import {
   NavLink,
   Outlet,
-  useNavigate,
 } from "react-router-dom";
 
-import {
-  useAuth,
-} from "../contexts/AuthContext";
-
 export function AppLayout() {
-  const {
-    logout,
-  } = useAuth();
-
-  const navigate =
-    useNavigate();
-
-  async function handleLogout(): Promise<void> {
-    await logout();
-
-    navigate(
-      "/login",
-      {
-        replace:
-          true,
-      },
-    );
-  }
-
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -133,16 +109,6 @@ export function AppLayout() {
             Lixeira
           </NavLink>
         </nav>
-
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={
-            handleLogout
-          }
-        >
-          Sair
-        </button>
       </aside>
 
       <main className="dashboard-content">
