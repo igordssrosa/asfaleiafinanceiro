@@ -6,18 +6,19 @@ import {
 function getNavigationClass({
   isActive,
 }: {
-  isActive: boolean;
-}): string | undefined {
+  isActive:
+    boolean;
+}): string {
   return isActive
-    ? "active-navigation"
-    : undefined;
+    ? "sidebar-nav-link active-navigation"
+    : "sidebar-nav-link";
 }
 
 export function AppLayout() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div>
+        <div className="sidebar-brand">
           <p className="eyebrow">
             Asfaleia
           </p>
@@ -27,78 +28,144 @@ export function AppLayout() {
           </h2>
         </div>
 
-        <nav aria-label="Menu principal">
-          <NavLink
-            to="/dashboard"
-            className={
-              getNavigationClass
-            }
+        <nav
+          className="sidebar-navigation"
+          aria-label="Menu principal"
+        >
+          <section
+            className="sidebar-nav-group"
+            aria-labelledby="sidebar-group-main"
           >
-            Visão geral
-          </NavLink>
+            <p
+              id="sidebar-group-main"
+              className="sidebar-nav-label"
+            >
+              Principal
+            </p>
 
-          <NavLink
-            to="/movimentacoes"
-            className={
-              getNavigationClass
-            }
-          >
-            Movimentações
-          </NavLink>
+            <div className="sidebar-nav-links">
+              <NavLink
+                to="/dashboard"
+                className={
+                  getNavigationClass
+                }
+              >
+                Visão geral
+              </NavLink>
 
-          <NavLink
-            to="/produtos"
-            className={
-              getNavigationClass
-            }
-          >
-            Produtos
-          </NavLink>
+              <NavLink
+                to="/movimentacoes"
+                className={
+                  getNavigationClass
+                }
+              >
+                Movimentações
+              </NavLink>
+            </div>
+          </section>
 
-          <NavLink
-            to="/estoque"
-            className={
-              getNavigationClass
-            }
+          <section
+            className="sidebar-nav-group"
+            aria-labelledby="sidebar-group-operation"
           >
-            Estoque
-          </NavLink>
+            <p
+              id="sidebar-group-operation"
+              className="sidebar-nav-label"
+            >
+              Operação
+            </p>
 
-          <NavLink
-            to="/calculadoras"
-            className={
-              getNavigationClass
-            }
-          >
-            Calculadoras
-          </NavLink>
+            <div className="sidebar-nav-links">
+              <NavLink
+                to="/produtos"
+                className={
+                  getNavigationClass
+                }
+              >
+                Produtos
+              </NavLink>
 
-          <NavLink
-            to="/relatorios"
-            className={
-              getNavigationClass
-            }
-          >
-            Relatórios
-          </NavLink>
+              <NavLink
+                to="/estoque"
+                className={
+                  getNavigationClass
+                }
+              >
+                Estoque
+              </NavLink>
+            </div>
+          </section>
 
-          <NavLink
-            to="/atividades"
-            className={
-              getNavigationClass
-            }
+          <section
+            className="sidebar-nav-group"
+            aria-labelledby="sidebar-group-control"
           >
-            Atividades
-          </NavLink>
+            <p
+              id="sidebar-group-control"
+              className="sidebar-nav-label"
+            >
+              Análise e controle
+            </p>
 
-          <NavLink
-            to="/lixeira"
-            className={
-              getNavigationClass
-            }
+            <div className="sidebar-nav-links">
+              <NavLink
+                to="/calculadoras"
+                className={
+                  getNavigationClass
+                }
+              >
+                Calculadoras
+              </NavLink>
+
+              <NavLink
+                to="/relatorios"
+                className={
+                  getNavigationClass
+                }
+              >
+                Relatórios
+              </NavLink>
+
+              <NavLink
+                to="/atividades"
+                className={
+                  getNavigationClass
+                }
+              >
+                Atividades
+              </NavLink>
+            </div>
+          </section>
+
+          <section
+            className="sidebar-nav-group sidebar-nav-group-system"
+            aria-labelledby="sidebar-group-system"
           >
-            Lixeira
-          </NavLink>
+            <p
+              id="sidebar-group-system"
+              className="sidebar-nav-label"
+            >
+              Sistema
+            </p>
+
+            <div className="sidebar-nav-links">
+              <NavLink
+                to="/lixeira"
+                className={({
+                  isActive,
+                }) =>
+                  [
+                    getNavigationClass({
+                      isActive,
+                    }),
+                    "sidebar-trash-link",
+                  ].join(" ")
+                }
+              >
+                Lixeira
+              </NavLink>
+            </div>
+          </section>
         </nav>
       </aside>
 

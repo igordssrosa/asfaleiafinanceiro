@@ -212,7 +212,7 @@ export function ProductsPage() {
 
   return (
     <>
-      <header className="dashboard-header">
+      <header className="dashboard-header product-page-header">
         <div>
           <p className="eyebrow">
             Catálogo
