@@ -1,3 +1,33 @@
+/* =========================================================
+   ASFALÉIA — SISTEMA FINANCEIRO
+   Arquivo principal de estilos
+
+   Organização:
+   01. Base e reset
+   02. Autenticação
+   03. Layout principal e navegação
+   04. Dashboard e componentes gerais
+   05. Formulários, botões e mensagens
+   06. Tabelas e indicadores
+   07. Cabeçalho e conta do usuário
+   08. Calculadora de precificação
+   09. Produtos
+   10. Ajustes de largura e responsividade
+   11. Lixeira
+   12. Relatórios
+   13. Atividades e auditoria
+   14. Controle de tema
+   15. Tema escuro e ajustes específicos por página
+
+   Observação:
+   A ordem das regras foi preservada para evitar mudanças
+   inesperadas na cascata do CSS.
+   ========================================================= */
+
+/* =========================================================
+   01. BASE, TIPOGRAFIA E RESET
+   ========================================================= */
+
 :root {
   font-family:
     Inter, system-ui, -apple-system, BlinkMacSystemFont,
@@ -48,6 +78,10 @@ h2,
 p {
   margin-top: 0;
 }
+
+/* =========================================================
+   02. AUTENTICAÇÃO E TELA DE LOGIN
+   ========================================================= */
 
 .centered-page,
 .login-page {
@@ -166,6 +200,10 @@ p {
   font-size: 14px;
 }
 
+/* =========================================================
+   03. LAYOUT PRINCIPAL E NAVEGAÇÃO LATERAL
+   ========================================================= */
+
 .app-layout {
   min-height: 100vh;
   display: grid;
@@ -215,6 +253,10 @@ p {
   color: #344057;
   font-weight: 600;
 }
+
+/* =========================================================
+   04. DASHBOARD, CABEÇALHO E CARDS DE RESUMO
+   ========================================================= */
 
 .dashboard-content {
   padding: 34px;
@@ -334,6 +376,10 @@ p {
     padding: 26px 20px;
   }
 }
+
+/* =========================================================
+   05. COMPONENTES GERAIS, FORMULÁRIOS E AÇÕES
+   ========================================================= */
 
 .sidebar-user {
   display: grid;
@@ -469,6 +515,10 @@ p {
   font-size: 14px;
 }
 
+/* =========================================================
+   06. TABELAS, BADGES E AÇÕES EM LINHA
+   ========================================================= */
+
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -587,9 +637,21 @@ p {
   }
 }
 
+/* =========================================================
+   07. CABEÇALHO, CONTA DO USUÁRIO E FILTRO DE MÊS
+   ========================================================= */
+
 .header-tools {
   display: grid;
   justify-items: end;
+  gap: 12px;
+}
+
+/* Mantém o botão de tema à esquerda do cartão da conta. */
+.header-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -653,7 +715,7 @@ p {
   gap: 12px;
 }
 
-.header-month-field>span {
+.header-month-field > span {
   white-space: nowrap;
 }
 
@@ -665,6 +727,10 @@ p {
   .header-tools {
     width: 100%;
     justify-items: stretch;
+  }
+
+  .header-account-row {
+    width: 100%;
   }
 
   .header-account-card {
@@ -682,6 +748,10 @@ p {
     min-width: 0;
   }
 }
+
+/* =========================================================
+   08. CALCULADORA DE PRECIFICAÇÃO
+   ========================================================= */
 
 .pricing-layout {
   display: grid;
@@ -701,7 +771,7 @@ p {
   gap: 14px;
 }
 
-.pricing-group+.pricing-group {
+.pricing-group + .pricing-group {
   padding-top: 22px;
   border-top: 1px solid #e5e9ef;
 }
@@ -782,7 +852,7 @@ p {
   display: grid;
 }
 
-.pricing-result-list>div {
+.pricing-result-list > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -791,7 +861,7 @@ p {
   border-bottom: 1px solid #e5e9ef;
 }
 
-.pricing-result-list>div:last-child {
+.pricing-result-list > div:last-child {
   border-bottom: 0;
 }
 
@@ -832,6 +902,10 @@ p {
     display: grid;
   }
 }
+
+/* =========================================================
+   09. CADASTRO, FILTROS E LISTAGEM DE PRODUTOS
+   ========================================================= */
 
 .product-form {
   display: grid;
@@ -911,7 +985,11 @@ p {
   }
 }
 
-/* Impede páginas internas de ultrapassarem a largura disponível */
+/* =========================================================
+   10. PROTEÇÕES DE LARGURA E RESPONSIVIDADE GLOBAL
+   ========================================================= */
+
+/* Evita que páginas internas ultrapassem a largura disponível. */
 .app-layout {
   grid-template-columns: 242px minmax(0, 1fr);
   width: 100%;
@@ -961,10 +1039,8 @@ p {
   overflow-x: auto;
 }
 
-/*
- * Telas de notebook e monitores menores.
- * No Full HD, o layout original permanece.
- */
+/* Ajustes para notebooks e monitores menores.
+   Em telas Full HD, o layout principal permanece inalterado. */
 @media (max-width: 1366px) {
   .dashboard-content {
     padding-left: 28px;
@@ -1059,6 +1135,10 @@ p {
   }
 }
 
+/* =========================================================
+   11. LIXEIRA E RESTAURAÇÃO DE REGISTROS
+   ========================================================= */
+
 .trash-tabs {
   display: flex;
   gap: 8px;
@@ -1132,6 +1212,10 @@ p {
   }
 }
 
+/* =========================================================
+   12. RELATÓRIOS E COMPARAÇÕES FINANCEIRAS
+   ========================================================= */
+
 .report-toolbar {
   display: flex;
   align-items: center;
@@ -1144,7 +1228,7 @@ p {
   background: #ffffff;
 }
 
-.report-toolbar>div {
+.report-toolbar > div {
   display: grid;
   min-width: 0;
   gap: 4px;
@@ -1228,7 +1312,7 @@ p {
   gap: 18px;
 }
 
-.report-category-header>div {
+.report-category-header > div {
   display: grid;
   min-width: 0;
   gap: 4px;
@@ -1351,12 +1435,12 @@ p {
   gap: 12px;
 }
 
-.report-bar-row>span {
+.report-bar-row > span {
   color: #697386;
   font-size: 12px;
 }
 
-.report-bar-row>strong {
+.report-bar-row > strong {
   color: #344057;
   font-size: 13px;
   text-align: right;
@@ -1466,14 +1550,14 @@ p {
       55px minmax(80px, 1fr);
   }
 
-  .report-bar-row>strong {
+  .report-bar-row > strong {
     grid-column: 2;
     text-align: left;
   }
 }
 
 /* =========================================================
-   PÁGINA DE ATIVIDADES / LOG DE AUDITORIA
+   13. PÁGINA DE ATIVIDADES E LOG DE AUDITORIA
    ========================================================= */
 
 .audit-filters-section {
@@ -2020,7 +2104,7 @@ p {
 }
 
 /* =========================================================
-   CONTROLE DE TEMA
+   14. CONTROLE DE TEMA E BOTÃO DE ALTERNÂNCIA
    ========================================================= */
 
 html {
@@ -2094,7 +2178,7 @@ div {
 }
 
 /* =========================================================
-   TEMA ESCURO — BASE
+   15. TEMA ESCURO — BASE E COMPONENTES
    ========================================================= */
 
 html[data-theme="dark"] {
@@ -2108,6 +2192,119 @@ html[data-theme="dark"] body {
 
 html[data-theme="dark"] #root {
   background: #080d18;
+}
+
+
+/* =========================================================
+   AUTENTICAÇÃO E TELA DE LOGIN
+   ========================================================= */
+
+/* Fundo da tela de login e das telas centralizadas */
+
+html[data-theme="dark"] .login-page,
+html[data-theme="dark"] .centered-page {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(85, 109, 147, 0.2),
+      transparent 38%
+    ),
+    #080d18;
+}
+
+/* Painel principal e cartão de carregamento/status */
+
+html[data-theme="dark"] .login-panel,
+html[data-theme="dark"] .status-card {
+  background: #0f172a;
+  color: #e2e8f0;
+
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.34);
+}
+
+/* Identidade visual e títulos */
+
+html[data-theme="dark"] .brand-mark {
+  background: #5f7ba8;
+  color: #ffffff;
+
+  box-shadow:
+    0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
+html[data-theme="dark"] .login-heading h1 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .login-heading .eyebrow {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .login-heading .muted-text {
+  color: #94a3b8;
+}
+
+/* Rótulos e campos */
+
+html[data-theme="dark"] .login-form label {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .login-form input {
+  background: #111827;
+  color: #e2e8f0;
+
+  border-color: rgba(148, 163, 184, 0.24);
+
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .login-form input::placeholder {
+  color: #64748b;
+}
+
+html[data-theme="dark"] .login-form input:hover {
+  border-color: rgba(148, 163, 184, 0.42);
+}
+
+html[data-theme="dark"] .login-form input:focus {
+  border-color: #60a5fa;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+/* Corrige o preenchimento automático do navegador */
+
+html[data-theme="dark"] .login-form input:-webkit-autofill,
+html[data-theme="dark"] .login-form input:-webkit-autofill:hover,
+html[data-theme="dark"] .login-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e2e8f0;
+
+  box-shadow:
+    0 0 0 1000px #111827 inset;
+
+  caret-color: #e2e8f0;
+
+  transition:
+    background-color 9999s ease-out;
+}
+
+/* Botão de entrada */
+
+html[data-theme="dark"] .login-form button {
+  background: #5f7ba8;
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 20px rgba(37, 99, 235, 0.16);
+}
+
+html[data-theme="dark"] .login-form button:hover:not(:disabled) {
+  background: #6f8bb8;
 }
 
 /* =========================================================
@@ -2353,6 +2550,280 @@ html[data-theme="dark"] .data-table tbody tr:hover {
 }
 
 /* =========================================================
+   PRODUTOS
+   ========================================================= */
+
+/* Área de pesquisa e filtros da listagem. */
+html[data-theme="dark"] .product-filters {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+/* Badges de situação dos produtos. */
+html[data-theme="dark"] .product-active {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+}
+
+html[data-theme="dark"] .product-inactive {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+}
+
+/* =========================================================
+   CALCULADORA DE PRECIFICAÇÃO
+   ========================================================= */
+
+/* Divisões e títulos dos grupos do formulário. */
+html[data-theme="dark"] .pricing-group + .pricing-group {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+html[data-theme="dark"] .pricing-group h3 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .pricing-calculating {
+  color: #94a3b8;
+}
+
+/* Painel lateral com o resultado calculado. */
+html[data-theme="dark"] .pricing-result-panel {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .pricing-result-panel h2 {
+  color: #f8fafc;
+}
+
+/* Estado anterior ao preenchimento da calculadora. */
+html[data-theme="dark"] .pricing-result-empty {
+  background: #111827;
+  color: #94a3b8;
+
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+/* Resultado principal da precificação. */
+html[data-theme="dark"] .pricing-main-result {
+  background: #172033;
+}
+
+html[data-theme="dark"] .pricing-main-result span {
+  color: #a8b6cc;
+}
+
+html[data-theme="dark"] .pricing-main-result strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .pricing-main-result small {
+  color: #94a3b8;
+}
+
+/* Lista dos componentes do preço. */
+html[data-theme="dark"] .pricing-result-list > div {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+html[data-theme="dark"] .pricing-result-list span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .pricing-result-list strong {
+  color: #e2e8f0;
+}
+
+/* =========================================================
+   RELATÓRIOS
+   ========================================================= */
+
+/* Barra superior do relatório e botão de exportação. */
+html[data-theme="dark"] .report-toolbar {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme="dark"] .report-toolbar strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .report-toolbar span {
+  color: #94a3b8;
+}
+
+/* Cards menores de situação. */
+html[data-theme="dark"] .report-status-card {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .report-status-card:hover {
+  background: #111b2e;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+html[data-theme="dark"] .report-status-card span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .report-status-card strong {
+  color: #f8fafc;
+}
+
+/* Cards de receitas e despesas por categoria. */
+html[data-theme="dark"] .report-category-card {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .report-category-card h2,
+html[data-theme="dark"] .report-category-card h3 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .report-category-card p {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .report-category-header strong {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .report-category-header span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .report-category-values strong {
+  color: #f8fafc;
+}
+
+/* Estado vazio das categorias. */
+html[data-theme="dark"] .report-empty-state {
+  background: #111827;
+  color: #94a3b8;
+
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+/* Participação das categorias. */
+html[data-theme="dark"] .report-progress-track {
+  background: #1e293b;
+}
+
+html[data-theme="dark"] .report-progress-value {
+  background: #60a5fa;
+}
+
+/* Área de comparação mensal. */
+html[data-theme="dark"] .report-comparison-section {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .report-comparison-heading h2 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .report-comparison-heading p {
+  color: #94a3b8;
+}
+
+/* Seleção do período da comparação. */
+html[data-theme="dark"] .comparison-months-field {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .comparison-months-field select {
+  background: #111827;
+  color: #e2e8f0;
+
+  border-color: rgba(148, 163, 184, 0.24);
+}
+
+html[data-theme="dark"] .comparison-months-field select:focus {
+  border-color: #60a5fa;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+/* Linhas, meses e quantidades. */
+html[data-theme="dark"] .report-comparison-row {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+html[data-theme="dark"] .report-comparison-row:hover {
+  background: rgba(148, 163, 184, 0.035);
+}
+
+html[data-theme="dark"] .report-comparison-month strong {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .report-comparison-month span {
+  color: #94a3b8;
+}
+
+/* Legendas, valores e trilhos das barras. */
+html[data-theme="dark"] .report-bar-row > span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .report-bar-row > strong {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .report-bar-track {
+  background: #1e293b;
+}
+
+/* Cores financeiras das barras. */
+html[data-theme="dark"] .report-income-bar {
+  background: #4ade80;
+}
+
+html[data-theme="dark"] .report-expense-bar {
+  background: #f87171;
+}
+
+/* Resultado mensal. */
+html[data-theme="dark"] .report-comparison-balance span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .report-comparison-balance strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .positive-value {
+  color: #4ade80;
+}
+
+html[data-theme="dark"] .negative-value {
+  color: #f87171;
+}
+
+/* =========================================================
    LOGS DE AUDITORIA
    ========================================================= */
 
@@ -2483,18 +2954,5 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 
   .theme-toggle-text {
     display: none;
-  }
-}
-
-.header-account-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-@media (max-width: 680px) {
-  .header-account-row {
-    width: 100%;
   }
 }
