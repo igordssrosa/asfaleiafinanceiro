@@ -1,29 +1,19 @@
 import {
-  useCallback,
-  useEffect,
   useState,
   type FormEvent,
 } from "react";
 
-import { ApiError } from "../api/api";
+import {
+  ApiError,
+} from "../api/api";
 
 import {
   createProductRequest,
-  deleteProductRequest,
-  listProductsRequest,
-  updateProductRequest,
 } from "../api/products";
 
-import { HeaderAccount } from "../components/HeaderAccount";
-
-import type {
-  Product,
-  ProductStatus,
-} from "../types/product";
-
 import {
-  formatCurrency,
-} from "../utils/format";
+  HeaderAccount,
+} from "../components/HeaderAccount";
 
 type ProductFormState = {
   name: string;
@@ -32,14 +22,7 @@ type ProductFormState = {
   description: string;
   unitCost: string;
   salePrice: string;
-  status: ProductStatus;
   notes: string;
-};
-
-type ProductFilters = {
-  search: string;
-  category: string;
-  status: "" | ProductStatus;
 };
 
 const initialForm: ProductFormState = {
@@ -49,14 +32,7 @@ const initialForm: ProductFormState = {
   description: "",
   unitCost: "",
   salePrice: "",
-  status: "active",
   notes: "",
-};
-
-const initialFilters: ProductFilters = {
-  search: "",
-  category: "",
-  status: "",
 };
 
 const categorySuggestions = [
@@ -82,78 +58,13 @@ function parseDecimal(
   );
 }
 
-function numberToInput(
-  value: number,
-): string {
-  return String(value).replace(
-    ".",
-    ",",
-  );
-}
-
-function calculateGrossProfit(
-  product: Product,
-): number {
-  return (
-    product.salePrice -
-    product.unitCost
-  );
-}
-
-function calculateGrossMargin(
-  product: Product,
-): number {
-  if (product.salePrice <= 0) {
-    return 0;
-  }
-
-  return (
-    calculateGrossProfit(product) /
-    product.salePrice
-  ) * 100;
-}
-
 export function ProductsPage() {
-  const [
-    products,
-    setProducts,
-  ] = useState<Product[]>([]);
-
   const [
     form,
     setForm,
   ] = useState<ProductFormState>(
     initialForm,
   );
-
-  const [
-    filters,
-    setFilters,
-  ] = useState<ProductFilters>(
-    initialFilters,
-  );
-
-  const [
-    appliedFilters,
-    setAppliedFilters,
-  ] = useState<ProductFilters>(
-    initialFilters,
-  );
-
-  const [
-    editingId,
-    setEditingId,
-  ] = useState<string | null>(null);
-
-  const [
-    totalProducts,
-    setTotalProducts,
-  ] = useState(0);
-
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
 
   const [
     isSubmitting,
@@ -170,103 +81,27 @@ export function ProductsPage() {
     setSuccessMessage,
   ] = useState("");
 
-  const loadProducts =
-    useCallback(async (): Promise<void> => {
-      setIsLoading(true);
-      setErrorMessage("");
-
-      try {
-        const response =
-          await listProductsRequest({
-            search:
-              appliedFilters.search.trim() ||
-              undefined,
-
-            category:
-              appliedFilters.category.trim() ||
-              undefined,
-
-            status:
-              appliedFilters.status ||
-              undefined,
-
-            page: 1,
-            limit: 100,
-          });
-
-        setProducts(
-          response.products,
-        );
-
-        setTotalProducts(
-          response.pagination.total,
-        );
-      } catch (error) {
-        if (error instanceof ApiError) {
-          setErrorMessage(
-            error.message,
-          );
-        } else {
-          setErrorMessage(
-            "Não foi possível carregar os produtos.",
-          );
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }, [appliedFilters]);
-
-  useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
-
   function updateForm<
     Key extends keyof ProductFormState,
   >(
     field: Key,
     value: ProductFormState[Key],
   ): void {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }));
+    setForm(
+      (currentForm) => ({
+        ...currentForm,
+        [field]: value,
+      }),
+    );
 
+    setErrorMessage("");
     setSuccessMessage("");
   }
 
-  function updateFilter<
-    Key extends keyof ProductFilters,
-  >(
-    field: Key,
-    value: ProductFilters[Key],
-  ): void {
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      [field]: value,
-    }));
-  }
-
   function resetForm(): void {
-    setEditingId(null);
-    setForm(initialForm);
-    setErrorMessage("");
-  }
-
-  function handleFilterSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ): void {
-    event.preventDefault();
-
-    setAppliedFilters({
-      search: filters.search,
-      category: filters.category,
-      status: filters.status,
+    setForm({
+      ...initialForm,
     });
-  }
-
-  function clearFilters(): void {
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
   }
 
   async function handleSubmit(
@@ -278,13 +113,19 @@ export function ProductsPage() {
     setSuccessMessage("");
 
     const unitCost =
-      parseDecimal(form.unitCost);
+      parseDecimal(
+        form.unitCost,
+      );
 
     const salePrice =
-      parseDecimal(form.salePrice);
+      parseDecimal(
+        form.salePrice,
+      );
 
     if (
-      !Number.isFinite(unitCost) ||
+      !Number.isFinite(
+        unitCost,
+      ) ||
       unitCost < 0
     ) {
       setErrorMessage(
@@ -295,7 +136,9 @@ export function ProductsPage() {
     }
 
     if (
-      !Number.isFinite(salePrice) ||
+      !Number.isFinite(
+        salePrice,
+      ) ||
       salePrice < 0
     ) {
       setErrorMessage(
@@ -305,10 +148,12 @@ export function ProductsPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(
+      true,
+    );
 
     try {
-      const input = {
+      await createProductRequest({
         name:
           form.name.trim(),
 
@@ -324,40 +169,32 @@ export function ProductsPage() {
           null,
 
         unitCost,
+
         salePrice,
 
+        /*
+         * Todo produto entra inicialmente ativo.
+         * Depois, o status pode ser controlado
+         * diretamente pela página de Estoque.
+         */
         status:
-          form.status,
+          "active",
 
         notes:
           form.notes.trim() ||
           null,
-      };
-
-      if (editingId) {
-        await updateProductRequest(
-          editingId,
-          input,
-        );
-
-        setSuccessMessage(
-          "Produto atualizado com sucesso.",
-        );
-      } else {
-        await createProductRequest(
-          input,
-        );
-
-        setSuccessMessage(
-          "Produto cadastrado com sucesso.",
-        );
-      }
+      });
 
       resetForm();
 
-      await loadProducts();
+      setSuccessMessage(
+        "Produto cadastrado com sucesso e enviado ao estoque.",
+      );
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (
+        error instanceof
+        ApiError
+      ) {
         setErrorMessage(
           error.message,
         );
@@ -367,111 +204,11 @@ export function ProductsPage() {
         );
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(
+        false,
+      );
     }
   }
-
-  function handleEdit(
-    product: Product,
-  ): void {
-    setEditingId(
-      product.id,
-    );
-
-    setForm({
-      name:
-        product.name,
-
-      sku:
-        product.sku ?? "",
-
-      category:
-        product.category,
-
-      description:
-        product.description ?? "",
-
-      unitCost:
-        numberToInput(
-          product.unitCost,
-        ),
-
-      salePrice:
-        numberToInput(
-          product.salePrice,
-        ),
-
-      status:
-        product.status,
-
-      notes:
-        product.notes ?? "",
-    });
-
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
-
-  async function handleDelete(
-    product: Product,
-  ): Promise<void> {
-    const confirmed =
-      window.confirm(
-        `Enviar "${product.name}" para a lixeira?`,
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      await deleteProductRequest(
-        product.id,
-      );
-
-      if (
-        editingId === product.id
-      ) {
-        resetForm();
-      }
-
-      setSuccessMessage(
-        "Produto enviado para a lixeira.",
-      );
-
-      await loadProducts();
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(
-          error.message,
-        );
-      } else {
-        setErrorMessage(
-          "Não foi possível excluir o produto.",
-        );
-      }
-    }
-  }
-
-  const activeProducts =
-    products.filter(
-      (product) =>
-        product.status === "active",
-    ).length;
-
-  const inactiveProducts =
-    products.filter(
-      (product) =>
-        product.status === "inactive",
-    ).length;
 
   return (
     <>
@@ -481,84 +218,26 @@ export function ProductsPage() {
             Catálogo
           </p>
 
-          <h1>Produtos</h1>
+          <h1>
+            Produtos
+          </h1>
 
           <p className="muted-text">
-            Cadastre e organize os produtos
-            da Asfaleia.
+            Cadastre novos produtos da
+            Asfaleia. Quantidades, cores,
+            tamanhos e disponibilidade são
+            gerenciados na página de Estoque.
           </p>
         </div>
 
         <HeaderAccount />
       </header>
 
-      <section className="metrics-grid compact-metrics">
-        <article className="metric-card">
-          <span>Total encontrado</span>
-
-          <strong>
-            {totalProducts}
-          </strong>
-
-          <small>
-            Produtos com os filtros atuais
-          </small>
-        </article>
-
-        <article className="metric-card">
-          <span>Ativos na lista</span>
-
-          <strong>
-            {activeProducts}
-          </strong>
-
-          <small>
-            Disponíveis para venda
-          </small>
-        </article>
-
-        <article className="metric-card">
-          <span>Inativos na lista</span>
-
-          <strong>
-            {inactiveProducts}
-          </strong>
-
-          <small>
-            Produtos pausados
-          </small>
-        </article>
-
-        <article className="metric-card">
-          <span>Valor potencial</span>
-
-          <strong>
-            {formatCurrency(
-              products.reduce(
-                (
-                  total,
-                  product,
-                ) =>
-                  total +
-                  product.salePrice,
-                0,
-              ),
-            )}
-          </strong>
-
-          <small>
-            Soma dos preços da lista
-          </small>
-        </article>
-      </section>
-
       <section className="empty-section">
         <div className="section-heading">
           <div>
             <h2>
-              {editingId
-                ? "Editar produto"
-                : "Novo produto"}
+              Novo produto
             </h2>
 
             <p>
@@ -566,29 +245,25 @@ export function ProductsPage() {
               por unidade.
             </p>
           </div>
-
-          {editingId && (
-            <button
-              type="button"
-              className="secondary-button inline-button"
-              onClick={resetForm}
-            >
-              Cancelar edição
-            </button>
-          )}
         </div>
 
         <form
           className="product-form"
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
         >
           <div className="form-grid">
             <label className="form-field">
-              <span>Nome do produto</span>
+              <span>
+                Nome do produto
+              </span>
 
               <input
                 type="text"
-                value={form.name}
+                value={
+                  form.name
+                }
                 onChange={(event) =>
                   updateForm(
                     "name",
@@ -598,17 +273,23 @@ export function ProductsPage() {
                 required
                 minLength={2}
                 maxLength={120}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 placeholder="Ex.: Camiseta básica"
               />
             </label>
 
             <label className="form-field">
-              <span>SKU</span>
+              <span>
+                SKU
+              </span>
 
               <input
                 type="text"
-                value={form.sku}
+                value={
+                  form.sku
+                }
                 onChange={(event) =>
                   updateForm(
                     "sku",
@@ -616,18 +297,24 @@ export function ProductsPage() {
                   )
                 }
                 maxLength={50}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 placeholder="Ex.: CAM-BAS-001"
               />
             </label>
 
             <label className="form-field">
-              <span>Categoria</span>
+              <span>
+                Categoria
+              </span>
 
               <input
                 type="text"
                 list="product-categories"
-                value={form.category}
+                value={
+                  form.category
+                }
                 onChange={(event) =>
                   updateForm(
                     "category",
@@ -637,7 +324,9 @@ export function ProductsPage() {
                 required
                 minLength={2}
                 maxLength={60}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 placeholder="Ex.: Camisetas"
               />
 
@@ -645,8 +334,12 @@ export function ProductsPage() {
                 {categorySuggestions.map(
                   (category) => (
                     <option
-                      key={category}
-                      value={category}
+                      key={
+                        category
+                      }
+                      value={
+                        category
+                      }
                     />
                   ),
                 )}
@@ -654,36 +347,16 @@ export function ProductsPage() {
             </label>
 
             <label className="form-field">
-              <span>Status</span>
-
-              <select
-                value={form.status}
-                onChange={(event) =>
-                  updateForm(
-                    "status",
-                    event.target
-                      .value as ProductStatus,
-                  )
-                }
-                disabled={isSubmitting}
-              >
-                <option value="active">
-                  Ativo
-                </option>
-
-                <option value="inactive">
-                  Inativo
-                </option>
-              </select>
-            </label>
-
-            <label className="form-field">
-              <span>Custo unitário</span>
+              <span>
+                Custo unitário
+              </span>
 
               <input
                 type="text"
                 inputMode="decimal"
-                value={form.unitCost}
+                value={
+                  form.unitCost
+                }
                 onChange={(event) =>
                   updateForm(
                     "unitCost",
@@ -691,18 +364,24 @@ export function ProductsPage() {
                   )
                 }
                 required
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 placeholder="0,00"
               />
             </label>
 
             <label className="form-field">
-              <span>Preço de venda</span>
+              <span>
+                Preço de venda
+              </span>
 
               <input
                 type="text"
                 inputMode="decimal"
-                value={form.salePrice}
+                value={
+                  form.salePrice
+                }
                 onChange={(event) =>
                   updateForm(
                     "salePrice",
@@ -710,16 +389,22 @@ export function ProductsPage() {
                   )
                 }
                 required
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 placeholder="0,00"
               />
             </label>
 
             <label className="form-field full-width">
-              <span>Descrição</span>
+              <span>
+                Descrição
+              </span>
 
               <textarea
-                value={form.description}
+                value={
+                  form.description
+                }
                 onChange={(event) =>
                   updateForm(
                     "description",
@@ -727,17 +412,23 @@ export function ProductsPage() {
                   )
                 }
                 maxLength={500}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 rows={3}
                 placeholder="Descrição do produto"
               />
             </label>
 
             <label className="form-field full-width">
-              <span>Observações</span>
+              <span>
+                Observações
+              </span>
 
               <textarea
-                value={form.notes}
+                value={
+                  form.notes
+                }
                 onChange={(event) =>
                   updateForm(
                     "notes",
@@ -745,7 +436,9 @@ export function ProductsPage() {
                   )
                 }
                 maxLength={500}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 rows={3}
                 placeholder="Informações internas"
               />
@@ -773,246 +466,15 @@ export function ProductsPage() {
           <button
             type="submit"
             className="primary-button"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting
+            }
           >
             {isSubmitting
               ? "Salvando..."
-              : editingId
-                ? "Salvar alterações"
-                : "Cadastrar produto"}
+              : "Cadastrar produto"}
           </button>
         </form>
-      </section>
-
-      <section className="empty-section">
-        <div className="section-heading">
-          <div>
-            <h2>Produtos cadastrados</h2>
-
-            <p>
-              Pesquise por nome, SKU ou
-              categoria.
-            </p>
-          </div>
-        </div>
-
-        <form
-          className="product-filters"
-          onSubmit={handleFilterSubmit}
-        >
-          <label className="form-field">
-            <span>Pesquisa</span>
-
-            <input
-              type="search"
-              value={filters.search}
-              onChange={(event) =>
-                updateFilter(
-                  "search",
-                  event.target.value,
-                )
-              }
-              placeholder="Nome, SKU ou categoria"
-            />
-          </label>
-
-          <label className="form-field">
-            <span>Categoria</span>
-
-            <input
-              type="text"
-              value={filters.category}
-              onChange={(event) =>
-                updateFilter(
-                  "category",
-                  event.target.value,
-                )
-              }
-              list="filter-product-categories"
-              placeholder="Todas"
-            />
-
-            <datalist id="filter-product-categories">
-              {categorySuggestions.map(
-                (category) => (
-                  <option
-                    key={category}
-                    value={category}
-                  />
-                ),
-              )}
-            </datalist>
-          </label>
-
-          <label className="form-field">
-            <span>Status</span>
-
-            <select
-              value={filters.status}
-              onChange={(event) =>
-                updateFilter(
-                  "status",
-                  event.target.value as
-                    | ""
-                    | ProductStatus,
-                )
-              }
-            >
-              <option value="">
-                Todos
-              </option>
-
-              <option value="active">
-                Ativos
-              </option>
-
-              <option value="inactive">
-                Inativos
-              </option>
-            </select>
-          </label>
-
-          <div className="product-filter-actions">
-            <button
-              type="submit"
-              className="primary-button filter-button"
-            >
-              Filtrar
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button filter-button"
-              onClick={clearFilters}
-            >
-              Limpar filtros
-            </button>
-          </div>
-        </form>
-
-        {isLoading ? (
-          <p>Carregando produtos...</p>
-        ) : products.length === 0 ? (
-          <div className="trash-empty-state">
-            <h3>
-              Nenhum produto encontrado
-            </h3>
-
-            <p>
-              Cadastre um produto ou altere
-              os filtros.
-            </p>
-          </div>
-        ) : (
-          <div className="table-wrapper">
-            <table className="data-table product-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>SKU</th>
-                  <th>Categoria</th>
-                  <th>Status</th>
-                  <th>Custo</th>
-                  <th>Preço</th>
-                  <th>Lucro bruto</th>
-                  <th>Margem bruta</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {products.map(
-                  (product) => (
-                    <tr key={product.id}>
-                      <td>
-                        <strong>
-                          {product.name}
-                        </strong>
-                      </td>
-
-                      <td>
-                        {product.sku ?? "-"}
-                      </td>
-
-                      <td>
-                        {product.category}
-                      </td>
-
-                      <td>
-                        <span
-                          className={`product-status-badge ${
-                            product.status ===
-                            "active"
-                              ? "product-active"
-                              : "product-inactive"
-                          }`}
-                        >
-                          {product.status ===
-                          "active"
-                            ? "Ativo"
-                            : "Inativo"}
-                        </span>
-                      </td>
-
-                      <td>
-                        {formatCurrency(
-                          product.unitCost,
-                        )}
-                      </td>
-
-                      <td>
-                        {formatCurrency(
-                          product.salePrice,
-                        )}
-                      </td>
-
-                      <td>
-                        {formatCurrency(
-                          calculateGrossProfit(
-                            product,
-                          ),
-                        )}
-                      </td>
-
-                      <td>
-                        {calculateGrossMargin(
-                          product,
-                        ).toFixed(2)}
-                        %
-                      </td>
-
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            type="button"
-                            className="table-button"
-                            onClick={() =>
-                              handleEdit(product)
-                            }
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            type="button"
-                            className="table-button danger-button"
-                            onClick={() =>
-                              void handleDelete(
-                                product,
-                              )
-                            }
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
     </>
   );

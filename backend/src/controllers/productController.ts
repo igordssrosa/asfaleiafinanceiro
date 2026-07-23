@@ -12,6 +12,10 @@ import {
 } from "zod";
 
 import {
+  InventoryModel,
+} from "../models/Inventory.js";
+
+import {
   ProductModel,
   type IProduct,
 } from "../models/Product.js";
@@ -428,6 +432,32 @@ export async function createProduct(
           null,
       });
 
+    try {
+      await InventoryModel.create({
+        productId:
+          product._id,
+
+        isActive:
+          product.status ===
+          "active",
+
+        variants:
+          [],
+      });
+    } catch (inventoryError) {
+      /*
+       * Evita deixar um produto sem registro
+       * de estoque caso a criação do estoque
+       * falhe por algum motivo.
+       */
+      await ProductModel.deleteOne({
+        _id:
+          product._id,
+      });
+
+      throw inventoryError;
+    }
+
     await recordAuditLog({
       request,
       userId,
@@ -473,7 +503,7 @@ export async function createProduct(
       .status(201)
       .json({
         message:
-          "Produto cadastrado com sucesso.",
+          "Produto cadastrado com sucesso e enviado ao estoque.",
 
         product:
           serializeProduct(
@@ -816,6 +846,41 @@ export async function updateProduct(
       return;
     }
 
+    /*
+     * Mantém o status do estoque sincronizado
+     * com o status exibido na página de produtos.
+     *
+     * O upsert também cria o estoque para produtos
+     * antigos que ainda não possuam esse registro.
+     */
+    await InventoryModel.updateOne(
+      {
+        productId:
+          product._id,
+      },
+
+      {
+        $set: {
+          isActive:
+            product.status ===
+            "active",
+        },
+
+        $setOnInsert: {
+          variants:
+            [],
+        },
+      },
+
+      {
+        upsert:
+          true,
+
+        runValidators:
+          true,
+      },
+    );
+
     await recordAuditLog({
       request,
       userId,
@@ -982,6 +1047,25 @@ export async function deleteProduct(
 
     return;
   }
+
+  /*
+   * Um produto enviado para a lixeira deixa de
+   * aparecer como ativo no controle de estoque.
+   * As quantidades e variações são preservadas.
+   */
+  await InventoryModel.updateOne(
+    {
+      productId:
+        product._id,
+    },
+
+    {
+      $set: {
+        isActive:
+          false,
+      },
+    },
+  );
 
   await recordAuditLog({
     request,
@@ -1203,6 +1287,39 @@ export async function restoreProduct(
     return;
   }
 
+  /*
+   * Restaura também o vínculo com o estoque.
+   * Produtos antigos recebem um estoque vazio
+   * automaticamente caso ainda não tenham um.
+   */
+  await InventoryModel.updateOne(
+    {
+      productId:
+        product._id,
+    },
+
+    {
+      $set: {
+        isActive:
+          product.status ===
+          "active",
+      },
+
+      $setOnInsert: {
+        variants:
+          [],
+      },
+    },
+
+    {
+      upsert:
+        true,
+
+      runValidators:
+        true,
+    },
+  );
+
   await recordAuditLog({
     request,
     userId,
@@ -1320,6 +1437,16 @@ export async function permanentlyDeleteProduct(
 
     return;
   }
+
+  /*
+   * Na exclusão definitiva, o estoque relacionado
+   * também é removido para não deixar documentos
+   * órfãos ocupando espaço no banco.
+   */
+  await InventoryModel.deleteOne({
+    productId:
+      product._id,
+  });
 
   /*
    * O documento retornado pelo MongoDB ainda

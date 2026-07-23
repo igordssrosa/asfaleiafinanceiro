@@ -7,10 +7,21 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoose from "mongoose";
 
-import { connectDatabase } from "./config/database.js";
-import { authRoutes } from "./routes/authRoutes.js";
-import { transactionRoutes } from "./routes/transactionRoutes.js";
-import { validateAuthEnvironment } from "./utils/authTokens.js";
+import {
+  connectDatabase,
+} from "./config/database.js";
+
+import {
+  auditLogRoutes,
+} from "./routes/auditLogRoutes.js";
+
+import {
+  authRoutes,
+} from "./routes/authRoutes.js";
+
+import {
+  inventoryRoutes,
+} from "./routes/inventoryRoutes.js";
 
 import {
   pricingCalculationRoutes,
@@ -25,34 +36,70 @@ import {
 } from "./routes/reportRoutes.js";
 
 import {
-  auditLogRoutes,
-} from "./routes/auditLogRoutes.js";
+  transactionRoutes,
+} from "./routes/transactionRoutes.js";
 
-const app = express();
+import {
+  validateAuthEnvironment,
+} from "./utils/authTokens.js";
 
-const port = Number(process.env.PORT) || 3333;
+const app =
+  express();
+
+const port =
+  Number(
+    process.env.PORT,
+  ) || 3333;
 
 const frontendUrl =
-  process.env.FRONTEND_URL || "http://localhost:5173";
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173";
 
-app.use(helmet());
+/* =========================================================
+   MIDDLEWARES GERAIS
+   ========================================================= */
+
+app.use(
+  helmet(),
+);
 
 app.use(
   cors({
-    origin: frontendUrl,
-    credentials: true,
+    origin:
+      frontendUrl,
+
+    credentials:
+      true,
   }),
 );
 
-app.use(express.json({ limit: "1mb" }));
-app.use(cookieParser());
+app.use(
+  express.json({
+    limit:
+      "1mb",
+  }),
+);
+
+app.use(
+  cookieParser(),
+);
 
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
+    windowMs:
+      15 *
+      60 *
+      1000,
+
+    limit:
+      200,
+
+    standardHeaders:
+      true,
+
+    legacyHeaders:
+      false,
+
     message: {
       message:
         "Muitas requisições. Aguarde alguns minutos e tente novamente.",
@@ -60,26 +107,25 @@ app.use(
   }),
 );
 
+/* =========================================================
+   ROTAS DE AUTENTICAÇÃO
+   ========================================================= */
+
 /*
- * Rotas de autenticação:
- *
  * POST /api/auth/login
  * POST /api/auth/refresh
  * POST /api/auth/logout
  * GET  /api/auth/me
  */
-app.use("/api/auth", authRoutes);
+app.use(
+  "/api/auth",
+  authRoutes,
+);
 
-/*
- * Rotas financeiras:
- *
- * GET    /api/transactions
- * GET    /api/transactions/summary
- * POST   /api/transactions
- * PATCH  /api/transactions/:id
- * DELETE /api/transactions/:id
- * POST   /api/transactions/:id/restore
- */
+/* =========================================================
+   ROTAS FINANCEIRAS
+   ========================================================= */
+
 app.use(
   "/api/transactions",
   transactionRoutes,
@@ -91,50 +137,109 @@ app.use(
 );
 
 app.use(
+  "/api/reports",
+  reportRoutes,
+);
+
+/* =========================================================
+   ROTAS DE PRODUTOS E ESTOQUE
+   ========================================================= */
+
+app.use(
   "/api/products",
   productRoutes,
 );
 
+/*
+ * GET /api/inventory
+ * GET /api/inventory/:productId
+ * PUT /api/inventory/:productId
+ */
 app.use(
-  "/api/reports",
-  reportRoutes,
+  "/api/inventory",
+  inventoryRoutes,
 );
+
+/* =========================================================
+   ROTAS DE AUDITORIA
+   ========================================================= */
 
 app.use(
   "/api/audit-logs",
   auditLogRoutes,
 );
 
-app.get("/api/health", async (_request, response) => {
-  try {
-    const database = mongoose.connection.db;
+/* =========================================================
+   VERIFICAÇÃO DA API E DO BANCO
+   ========================================================= */
 
-    if (!database) {
-      return response.status(503).json({
-        status: "error",
-        message:
-          "API funcionando, mas o banco está desconectado",
-        database: "disconnected",
-      });
+app.get(
+  "/api/health",
+  async (
+    _request,
+    response,
+  ) => {
+    try {
+      const database =
+        mongoose.connection.db;
+
+      if (!database) {
+        return response
+          .status(503)
+          .json({
+            status:
+              "error",
+
+            message:
+              "API funcionando, mas o banco está desconectado",
+
+            database:
+              "disconnected",
+          });
+      }
+
+      await database
+        .admin()
+        .command({
+          ping:
+            1,
+        });
+
+      return response
+        .status(200)
+        .json({
+          status:
+            "ok",
+
+          message:
+            "API da Asfaleia funcionando",
+
+          database:
+            "connected",
+
+          databaseName:
+            mongoose.connection.name,
+        });
+    } catch {
+      return response
+        .status(503)
+        .json({
+          status:
+            "error",
+
+          message:
+            "Não foi possível acessar o MongoDB Atlas",
+
+          database:
+            "error",
+        });
     }
+  },
+);
 
-    await database.admin().command({ ping: 1 });
-
-    return response.status(200).json({
-      status: "ok",
-      message: "API da Asfaleia funcionando",
-      database: "connected",
-      databaseName: mongoose.connection.name,
-    });
-  } catch {
-    return response.status(503).json({
-      status: "error",
-      message:
-        "Não foi possível acessar o MongoDB Atlas",
-      database: "error",
-    });
-  }
-});
+/* =========================================================
+   INICIALIZAÇÃO DO SERVIDOR
+   ========================================================= */
 
 async function startServer(): Promise<void> {
   try {
@@ -142,23 +247,35 @@ async function startServer(): Promise<void> {
 
     await connectDatabase();
 
-    app.listen(port, () => {
-      console.log(
-        `Servidor iniciado em http://localhost:${port}`,
-      );
-    });
+    app.listen(
+      port,
+      () => {
+        console.log(
+          `Servidor iniciado em http://localhost:${port}`,
+        );
+      },
+    );
   } catch (error) {
     console.error(
       "Não foi possível iniciar o servidor.",
     );
 
-    if (error instanceof Error) {
-      console.error(error.message);
+    if (
+      error instanceof
+      Error
+    ) {
+      console.error(
+        error.message,
+      );
     } else {
-      console.error(error);
+      console.error(
+        error,
+      );
     }
 
-    process.exit(1);
+    process.exit(
+      1,
+    );
   }
 }
 

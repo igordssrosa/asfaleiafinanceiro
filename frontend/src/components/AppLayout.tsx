@@ -3,6 +3,16 @@ import {
   Outlet,
 } from "react-router-dom";
 
+function getNavigationClass({
+  isActive,
+}: {
+  isActive: boolean;
+}): string | undefined {
+  return isActive
+    ? "active-navigation"
+    : undefined;
+}
+
 export function AppLayout() {
   return (
     <div className="app-layout">
@@ -20,12 +30,8 @@ export function AppLayout() {
         <nav aria-label="Menu principal">
           <NavLink
             to="/dashboard"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Visão geral
@@ -33,12 +39,8 @@ export function AppLayout() {
 
           <NavLink
             to="/movimentacoes"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Movimentações
@@ -46,25 +48,26 @@ export function AppLayout() {
 
           <NavLink
             to="/produtos"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Produtos
           </NavLink>
 
           <NavLink
+            to="/estoque"
+            className={
+              getNavigationClass
+            }
+          >
+            Estoque
+          </NavLink>
+
+          <NavLink
             to="/calculadoras"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Calculadoras
@@ -72,12 +75,8 @@ export function AppLayout() {
 
           <NavLink
             to="/relatorios"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Relatórios
@@ -85,12 +84,8 @@ export function AppLayout() {
 
           <NavLink
             to="/atividades"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Atividades
@@ -98,12 +93,8 @@ export function AppLayout() {
 
           <NavLink
             to="/lixeira"
-            className={({
-              isActive,
-            }) =>
-              isActive
-                ? "active-navigation"
-                : undefined
+            className={
+              getNavigationClass
             }
           >
             Lixeira

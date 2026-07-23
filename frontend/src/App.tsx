@@ -21,6 +21,10 @@ import {
 } from "./pages/DashboardPage";
 
 import {
+  InventoryPage,
+} from "./pages/InventoryPage";
+
+import {
   LoginPage,
 } from "./pages/LoginPage";
 
@@ -79,6 +83,13 @@ function App() {
           path="/produtos"
           element={
             <ProductsPage />
+          }
+        />
+
+        <Route
+          path="/estoque"
+          element={
+            <InventoryPage />
           }
         />
 
