@@ -2,7 +2,13 @@ import type {
   ReactNode,
 } from "react";
 
-import { useAuth } from "../contexts/AuthContext";
+import {
+  useAuth,
+} from "../contexts/AuthContext";
+
+import {
+  ThemeToggle,
+} from "./ThemeToggle";
 
 type HeaderAccountProps = {
   children?: ReactNode;
@@ -20,7 +26,9 @@ function getInitials(
     .split(/\s+/)
     .slice(0, 2)
     .map((part) =>
-      part.charAt(0).toUpperCase(),
+      part
+        .charAt(0)
+        .toUpperCase(),
     )
     .join("");
 }
@@ -28,26 +36,36 @@ function getInitials(
 export function HeaderAccount({
   children,
 }: HeaderAccountProps) {
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
 
   return (
     <div className="header-tools">
-      <div className="header-account-card">
-        <div
-          className="header-account-avatar"
-          aria-hidden="true"
-        >
-          {getInitials(user?.name)}
-        </div>
+      <div className="header-account-row">
+        <ThemeToggle />
 
-        <div className="header-account-details">
-          <strong>
-            {user?.name ?? "Usuário"}
-          </strong>
+        <div className="header-account-card">
+          <div
+            className="header-account-avatar"
+            aria-hidden="true"
+          >
+            {getInitials(
+              user?.name,
+            )}
+          </div>
 
-          <span>
-            {user?.email ?? ""}
-          </span>
+          <div className="header-account-details">
+            <strong>
+              {user?.name ??
+                "Usuário"}
+            </strong>
+
+            <span>
+              {user?.email ??
+                ""}
+            </span>
+          </div>
         </div>
       </div>
 
