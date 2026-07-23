@@ -3,20 +3,32 @@ import type {
   Response,
 } from "express";
 
-import { Types } from "mongoose";
-import { z } from "zod";
+import {
+  Types,
+} from "mongoose";
+
+import {
+  z,
+} from "zod";
 
 import {
   PricingCalculationModel,
   type IPricingCalculation,
 } from "../models/PricingCalculation.js";
 
+import {
+  recordAuditLog,
+} from "../services/auditLogService.js";
+
 const moneySchema = z
   .union([
     z.number(),
     z.string().trim(),
   ])
-  .transform((value) => Number(value))
+  .transform(
+    (value) =>
+      Number(value),
+  )
   .refine(
     (value) =>
       Number.isFinite(value) &&
@@ -32,7 +44,9 @@ const moneySchema = z
     (value) =>
       Math.abs(
         value * 100 -
-          Math.round(value * 100),
+          Math.round(
+            value * 100,
+          ),
       ) < 0.000001,
     "O valor deve possuir no máximo duas casas decimais.",
   );
@@ -42,7 +56,10 @@ const percentageSchema = z
     z.number(),
     z.string().trim(),
   ])
-  .transform((value) => Number(value))
+  .transform(
+    (value) =>
+      Number(value),
+  )
   .refine(
     (value) =>
       Number.isFinite(value) &&
@@ -50,165 +67,288 @@ const percentageSchema = z
     "O percentual não pode ser negativo.",
   )
   .refine(
-    (value) => value <= 100,
+    (value) =>
+      value <= 100,
     "O percentual não pode ser maior que 100.",
   );
 
-const pricingInputSchema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(
-        2,
-        "Informe um nome para o cálculo.",
-      )
-      .max(120),
+const pricingInputSchema =
+  z
+    .object({
+      name: z
+        .string()
+        .trim()
+        .min(
+          2,
+          "Informe um nome para o cálculo.",
+        )
+        .max(120),
 
-    productName: z
-      .string()
-      .trim()
-      .min(
-        2,
-        "Informe o nome do produto.",
-      )
-      .max(120),
+      productName: z
+        .string()
+        .trim()
+        .min(
+          2,
+          "Informe o nome do produto.",
+        )
+        .max(120),
 
-    costs: z.object({
-      productCost: moneySchema,
-      packagingCost: moneySchema,
-      operationalCost: moneySchema,
-      shippingSubsidy: moneySchema,
-      otherCost: moneySchema,
-    }),
+      costs:
+        z.object({
+          productCost:
+            moneySchema,
 
-    rates: z.object({
-      paymentFeePercent:
-        percentageSchema,
+          packagingCost:
+            moneySchema,
 
-      marketplaceFeePercent:
-        percentageSchema,
+          operationalCost:
+            moneySchema,
 
-      taxPercent:
-        percentageSchema,
+          shippingSubsidy:
+            moneySchema,
 
-      targetMarginPercent:
-        percentageSchema,
+          otherCost:
+            moneySchema,
+        }),
 
-      discountPercent:
-        percentageSchema.refine(
-          (value) => value < 100,
-          "O desconto deve ser menor que 100%.",
-        ),
-    }),
-  })
-  .superRefine((data, context) => {
-    const totalCosts =
-      data.costs.productCost +
-      data.costs.packagingCost +
-      data.costs.operationalCost +
-      data.costs.shippingSubsidy +
-      data.costs.otherCost;
+      rates:
+        z.object({
+          paymentFeePercent:
+            percentageSchema,
 
-    if (totalCosts <= 0) {
-      context.addIssue({
-        code: "custom",
-        path: ["costs"],
-        message:
-          "Informe pelo menos um custo maior que zero.",
-      });
-    }
+          marketplaceFeePercent:
+            percentageSchema,
 
-    const totalVariableRate =
-      data.rates.paymentFeePercent +
-      data.rates.marketplaceFeePercent +
-      data.rates.taxPercent;
+          taxPercent:
+            percentageSchema,
 
-    const totalRateWithMargin =
-      totalVariableRate +
-      data.rates.targetMarginPercent;
+          targetMarginPercent:
+            percentageSchema,
 
-    if (totalRateWithMargin >= 100) {
-      context.addIssue({
-        code: "custom",
-        path: ["rates"],
-        message:
-          "A soma das taxas com a margem deve ser menor que 100%.",
-      });
-    }
+          discountPercent:
+            percentageSchema.refine(
+              (value) =>
+                value < 100,
+              "O desconto deve ser menor que 100%.",
+            ),
+        }),
+    })
+    .superRefine(
+      (
+        data,
+        context,
+      ) => {
+        const totalCosts =
+          data.costs.productCost +
+          data.costs.packagingCost +
+          data.costs.operationalCost +
+          data.costs.shippingSubsidy +
+          data.costs.otherCost;
+
+        if (
+          totalCosts <= 0
+        ) {
+          context.addIssue({
+            code:
+              "custom",
+
+            path:
+              ["costs"],
+
+            message:
+              "Informe pelo menos um custo maior que zero.",
+          });
+        }
+
+        const totalVariableRate =
+          data.rates
+            .paymentFeePercent +
+          data.rates
+            .marketplaceFeePercent +
+          data.rates
+            .taxPercent;
+
+        const totalRateWithMargin =
+          totalVariableRate +
+          data.rates
+            .targetMarginPercent;
+
+        if (
+          totalRateWithMargin >=
+          100
+        ) {
+          context.addIssue({
+            code:
+              "custom",
+
+            path:
+              ["rates"],
+
+            message:
+              "A soma das taxas com a margem deve ser menor que 100%.",
+          });
+        }
+      },
+    );
+
+const listPricingSchema =
+  z.object({
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
+
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
   });
 
-const listPricingSchema = z.object({
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1),
+const listTrashSchema =
+  z.object({
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20),
-});
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+  });
 
 type PricingInput =
-  z.infer<typeof pricingInputSchema>;
+  z.infer<
+    typeof pricingInputSchema
+  >;
 
 type PricingCalculationWithId =
   IPricingCalculation & {
-    _id: Types.ObjectId;
+    _id:
+      Types.ObjectId;
   };
 
 type CalculatedPricing = {
   storedCosts: {
-    productCostCents: number;
-    packagingCostCents: number;
-    operationalCostCents: number;
-    shippingSubsidyCents: number;
-    otherCostCents: number;
+    productCostCents:
+      number;
+
+    packagingCostCents:
+      number;
+
+    operationalCostCents:
+      number;
+
+    shippingSubsidyCents:
+      number;
+
+    otherCostCents:
+      number;
   };
 
   storedRates: {
-    paymentFeePercent: number;
-    marketplaceFeePercent: number;
-    taxPercent: number;
-    targetMarginPercent: number;
-    discountPercent: number;
+    paymentFeePercent:
+      number;
+
+    marketplaceFeePercent:
+      number;
+
+    taxPercent:
+      number;
+
+    targetMarginPercent:
+      number;
+
+    discountPercent:
+      number;
   };
 
   storedResult: {
-    totalFixedCostCents: number;
-    totalVariableRatePercent: number;
-    targetSalePriceCents: number;
-    suggestedListPriceCents: number;
-    discountedSalePriceCents: number;
-    expectedVariableCostsCents: number;
-    expectedProfitCents: number;
-    achievedMarginPercent: number;
+    totalFixedCostCents:
+      number;
+
+    totalVariableRatePercent:
+      number;
+
+    targetSalePriceCents:
+      number;
+
+    suggestedListPriceCents:
+      number;
+
+    discountedSalePriceCents:
+      number;
+
+    expectedVariableCostsCents:
+      number;
+
+    expectedProfitCents:
+      number;
+
+    achievedMarginPercent:
+      number;
   };
 };
 
 function getAuthenticatedUserId(
   request: Request,
 ): Types.ObjectId | null {
-  const userId = request.auth?.userId;
+  const userId =
+    request.auth?.userId;
 
   if (
     !userId ||
-    !Types.ObjectId.isValid(userId)
+    !Types.ObjectId.isValid(
+      userId,
+    )
   ) {
     return null;
   }
 
-  return new Types.ObjectId(userId);
+  return new Types.ObjectId(
+    userId,
+  );
+}
+
+function getRouteId(
+  request: Request,
+): string | null {
+  const routeId =
+    request.params.id;
+
+  if (
+    typeof routeId ===
+    "string"
+  ) {
+    return routeId;
+  }
+
+  if (
+    Array.isArray(
+      routeId,
+    )
+  ) {
+    return (
+      routeId[0] ??
+      null
+    );
+  }
+
+  return null;
 }
 
 function toCents(
   value: number,
 ): number {
-  return Math.round(value * 100);
+  return Math.round(
+    value * 100,
+  );
 }
 
 function fromCents(
@@ -220,26 +360,45 @@ function fromCents(
 function roundPercentage(
   value: number,
 ): number {
-  return Math.round(value * 100) / 100;
+  return (
+    Math.round(
+      value * 100,
+    ) / 100
+  );
 }
 
 function calculatePricing(
   input: PricingInput,
 ): CalculatedPricing {
   const productCostCents =
-    toCents(input.costs.productCost);
+    toCents(
+      input.costs
+        .productCost,
+    );
 
   const packagingCostCents =
-    toCents(input.costs.packagingCost);
+    toCents(
+      input.costs
+        .packagingCost,
+    );
 
   const operationalCostCents =
-    toCents(input.costs.operationalCost);
+    toCents(
+      input.costs
+        .operationalCost,
+    );
 
   const shippingSubsidyCents =
-    toCents(input.costs.shippingSubsidy);
+    toCents(
+      input.costs
+        .shippingSubsidy,
+    );
 
   const otherCostCents =
-    toCents(input.costs.otherCost);
+    toCents(
+      input.costs
+        .otherCost,
+    );
 
   const totalFixedCostCents =
     productCostCents +
@@ -249,18 +408,26 @@ function calculatePricing(
     otherCostCents;
 
   const totalVariableRatePercent =
-    input.rates.paymentFeePercent +
-    input.rates.marketplaceFeePercent +
-    input.rates.taxPercent;
+    input.rates
+      .paymentFeePercent +
+    input.rates
+      .marketplaceFeePercent +
+    input.rates
+      .taxPercent;
 
   const totalVariableRate =
-    totalVariableRatePercent / 100;
+    totalVariableRatePercent /
+    100;
 
   const targetMarginRate =
-    input.rates.targetMarginPercent / 100;
+    input.rates
+      .targetMarginPercent /
+    100;
 
   const discountRate =
-    input.rates.discountPercent / 100;
+    input.rates
+      .discountPercent /
+    100;
 
   const salePriceDenominator =
     1 -
@@ -276,13 +443,19 @@ function calculatePricing(
   const suggestedListPriceCents =
     Math.ceil(
       targetSalePriceCents /
-        (1 - discountRate),
+        (
+          1 -
+          discountRate
+        ),
     );
 
   const discountedSalePriceCents =
     Math.round(
       suggestedListPriceCents *
-        (1 - discountRate),
+        (
+          1 -
+          discountRate
+        ),
     );
 
   const expectedVariableCostsCents =
@@ -297,12 +470,14 @@ function calculatePricing(
     expectedVariableCostsCents;
 
   const achievedMarginPercent =
-    discountedSalePriceCents > 0
+    discountedSalePriceCents >
+    0
       ? roundPercentage(
           (
             expectedProfitCents /
             discountedSalePriceCents
-          ) * 100,
+          ) *
+            100,
         )
       : 0;
 
@@ -317,23 +492,29 @@ function calculatePricing(
 
     storedRates: {
       paymentFeePercent:
-        input.rates.paymentFeePercent,
+        input.rates
+          .paymentFeePercent,
 
       marketplaceFeePercent:
-        input.rates.marketplaceFeePercent,
+        input.rates
+          .marketplaceFeePercent,
 
       taxPercent:
-        input.rates.taxPercent,
+        input.rates
+          .taxPercent,
 
       targetMarginPercent:
-        input.rates.targetMarginPercent,
+        input.rates
+          .targetMarginPercent,
 
       discountPercent:
-        input.rates.discountPercent,
+        input.rates
+          .discountPercent,
     },
 
     storedResult: {
       totalFixedCostCents,
+
       totalVariableRatePercent:
         roundPercentage(
           totalVariableRatePercent,
@@ -350,7 +531,8 @@ function calculatePricing(
 }
 
 function serializeResult(
-  calculation: CalculatedPricing,
+  calculation:
+    CalculatedPricing,
 ) {
   return {
     totalFixedCost:
@@ -413,7 +595,9 @@ function serializePricingCalculation(
 ) {
   return {
     id:
-      calculation._id.toString(),
+      calculation
+        ._id
+        .toString(),
 
     name:
       calculation.name,
@@ -525,6 +709,15 @@ function serializePricingCalculation(
         .updatedBy
         .toString(),
 
+    deletedAt:
+      calculation.deletedAt ??
+      null,
+
+    deletedBy:
+      calculation.deletedBy
+        ?.toString() ??
+      null,
+
     createdAt:
       calculation.createdAt,
 
@@ -542,16 +735,20 @@ export async function calculatePrice(
       request.body,
     );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados da precificação inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados da precificação inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -561,10 +758,14 @@ export async function calculatePrice(
       parsedBody.data,
     );
 
-  response.status(200).json({
-    result:
-      serializeResult(calculation),
-  });
+  response
+    .status(200)
+    .json({
+      result:
+        serializeResult(
+          calculation,
+        ),
+    });
 }
 
 export async function createPricingCalculation(
@@ -572,13 +773,17 @@ export async function createPricingCalculation(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
@@ -588,16 +793,20 @@ export async function createPricingCalculation(
       request.body,
     );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados da precificação inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados da precificação inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -606,41 +815,123 @@ export async function createPricingCalculation(
     parsedBody.data;
 
   const calculation =
-    calculatePricing(input);
+    calculatePricing(
+      input,
+    );
 
   const savedCalculation =
-    await PricingCalculationModel.create({
+    await PricingCalculationModel
+      .create({
+        name:
+          input.name.trim(),
+
+        productName:
+          input.productName.trim(),
+
+        costs:
+          calculation
+            .storedCosts,
+
+        rates:
+          calculation
+            .storedRates,
+
+        result:
+          calculation
+            .storedResult,
+
+        createdBy:
+          userId,
+
+        updatedBy:
+          userId,
+
+        deletedAt:
+          null,
+
+        deletedBy:
+          null,
+      });
+
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "create",
+
+    resource:
+      "pricing_calculation",
+
+    resourceId:
+      savedCalculation
+        ._id
+        .toString(),
+
+    description:
+      `Criou a precificação "${savedCalculation.name}" para o produto "${savedCalculation.productName}".`,
+
+    metadata: {
       name:
-        input.name.trim(),
+        savedCalculation.name,
 
       productName:
-        input.productName.trim(),
+        savedCalculation
+          .productName,
 
-      costs:
-        calculation.storedCosts,
+      totalFixedCost:
+        savedCalculation
+          .result
+          .totalFixedCostCents /
+        100,
 
-      rates:
-        calculation.storedRates,
+      targetSalePrice:
+        savedCalculation
+          .result
+          .targetSalePriceCents /
+        100,
 
-      result:
-        calculation.storedResult,
+      suggestedListPrice:
+        savedCalculation
+          .result
+          .suggestedListPriceCents /
+        100,
 
-      createdBy:
-        userId,
+      discountedSalePrice:
+        savedCalculation
+          .result
+          .discountedSalePriceCents /
+        100,
 
-      updatedBy:
-        userId,
-    });
+      expectedProfit:
+        savedCalculation
+          .result
+          .expectedProfitCents /
+        100,
 
-  response.status(201).json({
-    message:
-      "Precificação salva com sucesso.",
+      achievedMarginPercent:
+        savedCalculation
+          .result
+          .achievedMarginPercent,
 
-    calculation:
-      serializePricingCalculation(
-        savedCalculation,
-      ),
+      discountPercent:
+        savedCalculation
+          .rates
+          .discountPercent,
+    },
   });
+
+  response
+    .status(201)
+    .json({
+      message:
+        "Precificação salva com sucesso.",
+
+      calculation:
+        serializePricingCalculation(
+          savedCalculation,
+        ),
+    });
 }
 
 export async function listPricingCalculations(
@@ -652,16 +943,20 @@ export async function listPricingCalculations(
       request.query,
     );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Filtros inválidos.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros inválidos.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -669,43 +964,577 @@ export async function listPricingCalculations(
   const {
     page,
     limit,
-  } = parsedQuery.data;
+  } =
+    parsedQuery.data;
 
   const skip =
-    (page - 1) * limit;
+    (
+      page -
+      1
+    ) *
+    limit;
 
   const [
     calculations,
     total,
-  ] = await Promise.all([
-    PricingCalculationModel
-      .find()
-      .sort({
-        createdAt: -1,
-      })
-      .skip(skip)
-      .limit(limit),
+  ] =
+    await Promise.all([
+      PricingCalculationModel
+        .find({
+          deletedAt:
+            null,
+        })
+        .sort({
+          createdAt:
+            -1,
+        })
+        .skip(skip)
+        .limit(limit),
 
-    PricingCalculationModel
-      .countDocuments(),
-  ]);
+      PricingCalculationModel
+        .countDocuments({
+          deletedAt:
+            null,
+        }),
+    ]);
 
-  response.status(200).json({
-    calculations:
-      calculations.map(
-        (calculation) =>
-          serializePricingCalculation(
-            calculation,
+  response
+    .status(200)
+    .json({
+      calculations:
+        calculations.map(
+          (calculation) =>
+            serializePricingCalculation(
+              calculation,
+            ),
+        ),
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
           ),
-      ),
+      },
+    });
+}
 
-    pagination: {
-      page,
-      limit,
-      total,
+export async function deletePricingCalculation(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const userId =
+    getAuthenticatedUserId(
+      request,
+    );
 
-      totalPages:
-        Math.ceil(total / limit),
+  if (!userId) {
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
+
+    return;
+  }
+
+  const id =
+    getRouteId(
+      request,
+    );
+
+  if (
+    !id ||
+    !Types.ObjectId.isValid(
+      id,
+    )
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
+
+    return;
+  }
+
+  const calculation =
+    await PricingCalculationModel
+      .findOneAndUpdate(
+        {
+          _id:
+            id,
+
+          deletedAt:
+            null,
+        },
+
+        {
+          $set: {
+            deletedAt:
+              new Date(),
+
+            deletedBy:
+              userId,
+
+            updatedBy:
+              userId,
+          },
+        },
+
+        {
+          returnDocument:
+            "after",
+        },
+      );
+
+  if (!calculation) {
+    response
+      .status(404)
+      .json({
+        message:
+          "Precificação não encontrada.",
+      });
+
+    return;
+  }
+
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "move_to_trash",
+
+    resource:
+      "pricing_calculation",
+
+    resourceId:
+      calculation
+        ._id
+        .toString(),
+
+    description:
+      `Enviou a precificação "${calculation.name}" para a lixeira.`,
+
+    metadata: {
+      name:
+        calculation.name,
+
+      productName:
+        calculation
+          .productName,
+
+      totalFixedCost:
+        calculation
+          .result
+          .totalFixedCostCents /
+        100,
+
+      suggestedListPrice:
+        calculation
+          .result
+          .suggestedListPriceCents /
+        100,
+
+      discountedSalePrice:
+        calculation
+          .result
+          .discountedSalePriceCents /
+        100,
+
+      expectedProfit:
+        calculation
+          .result
+          .expectedProfitCents /
+        100,
+
+      achievedMarginPercent:
+        calculation
+          .result
+          .achievedMarginPercent,
     },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Precificação enviada para a lixeira.",
+    });
+}
+
+export async function listDeletedPricingCalculations(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const parsedQuery =
+    listTrashSchema.safeParse(
+      request.query,
+    );
+
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros da lixeira inválidos.",
+
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
+
+    return;
+  }
+
+  const {
+    page,
+    limit,
+  } =
+    parsedQuery.data;
+
+  const skip =
+    (
+      page -
+      1
+    ) *
+    limit;
+
+  const filter = {
+    deletedAt: {
+      $ne:
+        null,
+    },
+  };
+
+  const [
+    calculations,
+    total,
+  ] =
+    await Promise.all([
+      PricingCalculationModel
+        .find(filter)
+        .sort({
+          deletedAt:
+            -1,
+        })
+        .skip(skip)
+        .limit(limit),
+
+      PricingCalculationModel
+        .countDocuments(
+          filter,
+        ),
+    ]);
+
+  response
+    .status(200)
+    .json({
+      calculations:
+        calculations.map(
+          (calculation) =>
+            serializePricingCalculation(
+              calculation,
+            ),
+        ),
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
+          ),
+      },
+    });
+}
+
+export async function restorePricingCalculation(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const userId =
+    getAuthenticatedUserId(
+      request,
+    );
+
+  if (!userId) {
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
+
+    return;
+  }
+
+  const id =
+    getRouteId(
+      request,
+    );
+
+  if (
+    !id ||
+    !Types.ObjectId.isValid(
+      id,
+    )
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
+
+    return;
+  }
+
+  const calculation =
+    await PricingCalculationModel
+      .findOneAndUpdate(
+        {
+          _id:
+            id,
+
+          deletedAt: {
+            $ne:
+              null,
+          },
+        },
+
+        {
+          $set: {
+            deletedAt:
+              null,
+
+            deletedBy:
+              null,
+
+            updatedBy:
+              userId,
+          },
+        },
+
+        {
+          returnDocument:
+            "after",
+        },
+      );
+
+  if (!calculation) {
+    response
+      .status(404)
+      .json({
+        message:
+          "Precificação excluída não encontrada.",
+      });
+
+    return;
+  }
+
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "restore",
+
+    resource:
+      "pricing_calculation",
+
+    resourceId:
+      calculation
+        ._id
+        .toString(),
+
+    description:
+      `Restaurou a precificação "${calculation.name}".`,
+
+    metadata: {
+      name:
+        calculation.name,
+
+      productName:
+        calculation
+          .productName,
+
+      suggestedListPrice:
+        calculation
+          .result
+          .suggestedListPriceCents /
+        100,
+
+      discountedSalePrice:
+        calculation
+          .result
+          .discountedSalePriceCents /
+        100,
+
+      expectedProfit:
+        calculation
+          .result
+          .expectedProfitCents /
+        100,
+
+      achievedMarginPercent:
+        calculation
+          .result
+          .achievedMarginPercent,
+    },
+  });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Precificação restaurada com sucesso.",
+
+      calculation:
+        serializePricingCalculation(
+          calculation,
+        ),
+    });
+}
+
+export async function permanentlyDeletePricingCalculation(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const userId =
+    getAuthenticatedUserId(
+      request,
+    );
+
+  if (!userId) {
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
+
+    return;
+  }
+
+  const id =
+    getRouteId(
+      request,
+    );
+
+  if (
+    !id ||
+    !Types.ObjectId.isValid(
+      id,
+    )
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
+
+    return;
+  }
+
+  const calculation =
+    await PricingCalculationModel
+      .findOneAndDelete({
+        _id:
+          id,
+
+        deletedAt: {
+          $ne:
+            null,
+        },
+      });
+
+  if (!calculation) {
+    response
+      .status(404)
+      .json({
+        message:
+          "Precificação excluída não encontrada.",
+      });
+
+    return;
+  }
+
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "permanent_delete",
+
+    resource:
+      "pricing_calculation",
+
+    resourceId:
+      calculation
+        ._id
+        .toString(),
+
+    description:
+      `Excluiu permanentemente a precificação "${calculation.name}".`,
+
+    metadata: {
+      name:
+        calculation.name,
+
+      productName:
+        calculation
+          .productName,
+
+      totalFixedCost:
+        calculation
+          .result
+          .totalFixedCostCents /
+        100,
+
+      suggestedListPrice:
+        calculation
+          .result
+          .suggestedListPriceCents /
+        100,
+
+      discountedSalePrice:
+        calculation
+          .result
+          .discountedSalePriceCents /
+        100,
+
+      expectedProfit:
+        calculation
+          .result
+          .expectedProfitCents /
+        100,
+
+      achievedMarginPercent:
+        calculation
+          .result
+          .achievedMarginPercent,
+    },
+  });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Precificação excluída permanentemente.",
+    });
 }

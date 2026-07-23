@@ -41,8 +41,15 @@ export type PricingCalculation = {
   result: PricingResult;
   createdBy: string;
   updatedBy: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
   createdAt: string;
   updatedAt: string;
+
+};
+
+export type PricingMessageResponse = {
+  message: string;
 };
 
 export type CalculatePricingResponse = {

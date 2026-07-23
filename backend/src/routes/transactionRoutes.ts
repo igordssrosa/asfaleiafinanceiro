@@ -6,6 +6,7 @@ import {
   getMonthlySummary,
   listDeletedTransactions,
   listTransactions,
+  permanentlyDeleteTransaction,
   restoreTransaction,
   updateTransaction,
 } from "../controllers/transactionController.js";
@@ -17,7 +18,9 @@ import {
 const transactionRoutes =
   Router();
 
-transactionRoutes.use(requireAuth);
+transactionRoutes.use(
+  requireAuth,
+);
 
 transactionRoutes.get(
   "/summary",
@@ -42,6 +45,11 @@ transactionRoutes.post(
 transactionRoutes.patch(
   "/:id",
   updateTransaction,
+);
+
+transactionRoutes.delete(
+  "/:id/permanent",
+  permanentlyDeleteTransaction,
 );
 
 transactionRoutes.delete(

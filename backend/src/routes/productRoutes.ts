@@ -5,6 +5,7 @@ import {
   deleteProduct,
   listDeletedProducts,
   listProducts,
+  permanentlyDeleteProduct,
   restoreProduct,
   updateProduct,
 } from "../controllers/productController.js";
@@ -16,7 +17,9 @@ import {
 const productRoutes =
   Router();
 
-productRoutes.use(requireAuth);
+productRoutes.use(
+  requireAuth,
+);
 
 productRoutes.get(
   "/trash",
@@ -36,6 +39,11 @@ productRoutes.post(
 productRoutes.patch(
   "/:id",
   updateProduct,
+);
+
+productRoutes.delete(
+  "/:id/permanent",
+  permanentlyDeleteProduct,
 );
 
 productRoutes.delete(

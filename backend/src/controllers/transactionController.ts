@@ -1,7 +1,4 @@
-import type {
-  Request,
-  Response,
-} from "express";
+import type { Request, Response } from "express";
 
 import { Types } from "mongoose";
 import { z } from "zod";
@@ -11,6 +8,9 @@ import {
   type ITransaction,
 } from "../models/Transaction.js";
 
+import {
+  recordAuditLog,
+} from "../services/auditLogService.js";
 
 type TransactionFilter = {
   deletedAt: null;
@@ -70,7 +70,7 @@ const moneySchema = z
     (value) =>
       Math.abs(
         value * 100 -
-        Math.round(value * 100),
+          Math.round(value * 100),
       ) < 0.000001,
     "O valor deve possuir no máximo duas casas decimais.",
   );
@@ -83,20 +83,26 @@ const dateSchema = z
   )
   .refine((value) => {
     const [year, month, day] =
-      value.split("-").map(Number);
+      value
+        .split("-")
+        .map(Number);
 
-    const date = new Date(
-      Date.UTC(
-        year,
-        month - 1,
-        day,
-      ),
-    );
+    const date =
+      new Date(
+        Date.UTC(
+          year,
+          month - 1,
+          day,
+        ),
+      );
 
     return (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
+      date.getUTCFullYear() ===
+        year &&
+      date.getUTCMonth() ===
+        month - 1 &&
+      date.getUTCDate() ===
+        day
     );
   }, "Data inválida.");
 
@@ -107,9 +113,10 @@ const monthSchema = z
     "O mês deve estar no formato AAAA-MM.",
   )
   .refine((value) => {
-    const month = Number(
-      value.split("-")[1],
-    );
+    const month =
+      Number(
+        value.split("-")[1],
+      );
 
     return (
       month >= 1 &&
@@ -117,112 +124,124 @@ const monthSchema = z
     );
   }, "Mês inválido.");
 
-const createTransactionSchema = z.object({
-  type: transactionTypeSchema,
+const createTransactionSchema =
+  z.object({
+    type:
+      transactionTypeSchema,
 
-  description: z
-    .string()
-    .trim()
-    .min(
-      2,
-      "Informe uma descrição.",
-    )
-    .max(120),
+    description: z
+      .string()
+      .trim()
+      .min(
+        2,
+        "Informe uma descrição.",
+      )
+      .max(120),
 
-  amount: moneySchema,
+    amount:
+      moneySchema,
 
-  category: z
-    .string()
-    .trim()
-    .min(
-      2,
-      "Informe uma categoria.",
-    )
-    .max(60),
+    category: z
+      .string()
+      .trim()
+      .min(
+        2,
+        "Informe uma categoria.",
+      )
+      .max(60),
 
-  date: dateSchema,
+    date:
+      dateSchema,
 
-  paymentMethod:
-    paymentMethodSchema,
+    paymentMethod:
+      paymentMethodSchema,
 
-  status:
-    transactionStatusSchema.default(
-      "completed",
-    ),
+    status:
+      transactionStatusSchema.default(
+        "completed",
+      ),
 
-  notes: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .nullable(),
-});
+    notes: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .nullable(),
+  });
 
 const updateTransactionSchema =
   createTransactionSchema
     .partial()
     .refine(
       (data) =>
-        Object.keys(data).length > 0,
+        Object.keys(data).length >
+        0,
       "Informe pelo menos um campo para alteração.",
     );
 
-const listTransactionsSchema = z.object({
-  month:
-    monthSchema.optional(),
+const listTransactionsSchema =
+  z.object({
+    month:
+      monthSchema.optional(),
 
-  type:
-    transactionTypeSchema.optional(),
+    type:
+      transactionTypeSchema.optional(),
 
-  status:
-    transactionStatusSchema.optional(),
+    status:
+      transactionStatusSchema.optional(),
 
-  category: z
-    .string()
-    .trim()
-    .min(1)
-    .max(60)
-    .optional(),
+    category: z
+      .string()
+      .trim()
+      .min(1)
+      .max(60)
+      .optional(),
 
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1),
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20),
-});
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+  });
 
-const listTrashSchema = z.object({
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1),
+const listTrashSchema =
+  z.object({
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20),
-});
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+  });
 
-const summarySchema = z.object({
-  month: monthSchema,
-});
+const summarySchema =
+  z.object({
+    month:
+      monthSchema,
+  });
 
 function serializeTransaction(
-  transaction: TransactionWithId,
+  transaction:
+    TransactionWithId,
 ) {
   return {
     id:
-      transaction._id.toString(),
+      transaction
+        ._id
+        .toString(),
 
     type:
       transaction.type,
@@ -231,7 +250,8 @@ function serializeTransaction(
       transaction.description,
 
     amount:
-      transaction.amountCents / 100,
+      transaction.amountCents /
+      100,
 
     category:
       transaction.category,
@@ -249,16 +269,21 @@ function serializeTransaction(
       transaction.notes,
 
     createdBy:
-      transaction.createdBy.toString(),
+      transaction
+        .createdBy
+        .toString(),
 
     updatedBy:
-      transaction.updatedBy.toString(),
+      transaction
+        .updatedBy
+        .toString(),
 
     deletedAt:
       transaction.deletedAt,
 
     deletedBy:
-      transaction.deletedBy?.toString() ??
+      transaction.deletedBy
+        ?.toString() ??
       null,
 
     createdAt:
@@ -277,7 +302,9 @@ function getAuthenticatedUserId(
 
   if (
     !userId ||
-    !Types.ObjectId.isValid(userId)
+    !Types.ObjectId.isValid(
+      userId,
+    )
   ) {
     return null;
   }
@@ -294,7 +321,8 @@ function getRouteId(
     request.params.id;
 
   if (
-    typeof routeId === "string"
+    typeof routeId ===
+    "string"
   ) {
     return routeId;
   }
@@ -302,7 +330,10 @@ function getRouteId(
   if (
     Array.isArray(routeId)
   ) {
-    return routeId[0] ?? null;
+    return (
+      routeId[0] ??
+      null
+    );
   }
 
   return null;
@@ -318,29 +349,36 @@ export async function createTransaction(
     );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const parsedBody =
-    createTransactionSchema.safeParse(
-      request.body,
-    );
+    createTransactionSchema
+      .safeParse(
+        request.body,
+      );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados da movimentação inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados da movimentação inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -390,15 +428,62 @@ export async function createTransaction(
         null,
     });
 
-  response.status(201).json({
-    message:
-      "Movimentação cadastrada com sucesso.",
+  await recordAuditLog({
+    request,
+    userId,
 
-    transaction:
-      serializeTransaction(
-        transaction,
-      ),
+    action:
+      "create",
+
+    resource:
+      "transaction",
+
+    resourceId:
+      transaction
+        ._id
+        .toString(),
+
+    description:
+      `Criou a ${
+        transaction.type ===
+        "income"
+          ? "receita"
+          : "despesa"
+      } "${transaction.description}".`,
+
+    metadata: {
+      type:
+        transaction.type,
+
+      amount:
+        transaction.amountCents /
+        100,
+
+      category:
+        transaction.category,
+
+      date:
+        transaction.date,
+
+      paymentMethod:
+        transaction.paymentMethod,
+
+      status:
+        transaction.status,
+    },
   });
+
+  response
+    .status(201)
+    .json({
+      message:
+        "Movimentação cadastrada com sucesso.",
+
+      transaction:
+        serializeTransaction(
+          transaction,
+        ),
+    });
 }
 
 export async function listTransactions(
@@ -406,20 +491,25 @@ export async function listTransactions(
   response: Response,
 ): Promise<void> {
   const parsedQuery =
-    listTransactionsSchema.safeParse(
-      request.query,
-    );
+    listTransactionsSchema
+      .safeParse(
+        request.query,
+      );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Filtros inválidos.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros inválidos.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -433,9 +523,11 @@ export async function listTransactions(
     limit,
   } = parsedQuery.data;
 
-  const filter: TransactionFilter = {
-    deletedAt: null,
-  };
+  const filter:
+    TransactionFilter = {
+      deletedAt:
+        null,
+    };
 
   if (month) {
     filter.date = {
@@ -463,7 +555,8 @@ export async function listTransactions(
   }
 
   const skip =
-    (page - 1) * limit;
+    (page - 1) *
+    limit;
 
   const [
     transactions,
@@ -472,8 +565,11 @@ export async function listTransactions(
     TransactionModel
       .find(filter)
       .sort({
-        date: -1,
-        createdAt: -1,
+        date:
+          -1,
+
+        createdAt:
+          -1,
       })
       .skip(skip)
       .limit(limit),
@@ -484,26 +580,29 @@ export async function listTransactions(
       ),
   ]);
 
-  response.status(200).json({
-    transactions:
-      transactions.map(
-        (transaction) =>
-          serializeTransaction(
-            transaction,
-          ),
-      ),
-
-    pagination: {
-      page,
-      limit,
-      total,
-
-      totalPages:
-        Math.ceil(
-          total / limit,
+  response
+    .status(200)
+    .json({
+      transactions:
+        transactions.map(
+          (transaction) =>
+            serializeTransaction(
+              transaction,
+            ),
         ),
-    },
-  });
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
+          ),
+      },
+    });
 }
 
 export async function getMonthlySummary(
@@ -515,21 +614,27 @@ export async function getMonthlySummary(
       request.query,
     );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Informe um mês válido.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Informe um mês válido.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
 
-  const { month } =
+  const {
+    month,
+  } =
     parsedQuery.data;
 
   const startDate =
@@ -539,188 +644,197 @@ export async function getMonthlySummary(
     `${month}-31`;
 
   const [summary] =
-    await TransactionModel.aggregate([
-      {
-        $match: {
-          deletedAt:
-            null,
+    await TransactionModel
+      .aggregate([
+        {
+          $match: {
+            deletedAt:
+              null,
 
-          date: {
-            $gte:
-              startDate,
+            date: {
+              $gte:
+                startDate,
 
-            $lte:
-              endDate,
+              $lte:
+                endDate,
+            },
           },
         },
-      },
 
-      {
-        $group: {
-          _id:
-            null,
+        {
+          $group: {
+            _id:
+              null,
 
-          completedIncomeCents: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    {
-                      $eq: [
-                        "$type",
-                        "income",
-                      ],
-                    },
+            completedIncomeCents: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      {
+                        $eq: [
+                          "$type",
+                          "income",
+                        ],
+                      },
 
-                    {
-                      $eq: [
-                        "$status",
-                        "completed",
-                      ],
-                    },
-                  ],
-                },
+                      {
+                        $eq: [
+                          "$status",
+                          "completed",
+                        ],
+                      },
+                    ],
+                  },
 
-                "$amountCents",
-                0,
-              ],
+                  "$amountCents",
+                  0,
+                ],
+              },
             },
-          },
 
-          completedExpenseCents: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    {
-                      $eq: [
-                        "$type",
-                        "expense",
-                      ],
-                    },
+            completedExpenseCents: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      {
+                        $eq: [
+                          "$type",
+                          "expense",
+                        ],
+                      },
 
-                    {
-                      $eq: [
-                        "$status",
-                        "completed",
-                      ],
-                    },
-                  ],
-                },
+                      {
+                        $eq: [
+                          "$status",
+                          "completed",
+                        ],
+                      },
+                    ],
+                  },
 
-                "$amountCents",
-                0,
-              ],
+                  "$amountCents",
+                  0,
+                ],
+              },
             },
-          },
 
-          pendingIncomeCents: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    {
-                      $eq: [
-                        "$type",
-                        "income",
-                      ],
-                    },
+            pendingIncomeCents: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      {
+                        $eq: [
+                          "$type",
+                          "income",
+                        ],
+                      },
 
-                    {
-                      $eq: [
-                        "$status",
-                        "pending",
-                      ],
-                    },
-                  ],
-                },
+                      {
+                        $eq: [
+                          "$status",
+                          "pending",
+                        ],
+                      },
+                    ],
+                  },
 
-                "$amountCents",
-                0,
-              ],
+                  "$amountCents",
+                  0,
+                ],
+              },
             },
-          },
 
-          pendingExpenseCents: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    {
-                      $eq: [
-                        "$type",
-                        "expense",
-                      ],
-                    },
+            pendingExpenseCents: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      {
+                        $eq: [
+                          "$type",
+                          "expense",
+                        ],
+                      },
 
-                    {
-                      $eq: [
-                        "$status",
-                        "pending",
-                      ],
-                    },
-                  ],
-                },
+                      {
+                        $eq: [
+                          "$status",
+                          "pending",
+                        ],
+                      },
+                    ],
+                  },
 
-                "$amountCents",
-                0,
-              ],
+                  "$amountCents",
+                  0,
+                ],
+              },
             },
-          },
 
-          transactionCount: {
-            $sum:
-              1,
+            transactionCount: {
+              $sum:
+                1,
+            },
           },
         },
-      },
-    ]);
+      ]);
 
   const completedIncomeCents =
-    summary?.completedIncomeCents ??
+    summary
+      ?.completedIncomeCents ??
     0;
 
   const completedExpenseCents =
-    summary?.completedExpenseCents ??
+    summary
+      ?.completedExpenseCents ??
     0;
 
   const pendingIncomeCents =
-    summary?.pendingIncomeCents ??
+    summary
+      ?.pendingIncomeCents ??
     0;
 
   const pendingExpenseCents =
-    summary?.pendingExpenseCents ??
+    summary
+      ?.pendingExpenseCents ??
     0;
 
-  response.status(200).json({
-    month,
+  response
+    .status(200)
+    .json({
+      month,
 
-    income:
-      completedIncomeCents /
-      100,
+      income:
+        completedIncomeCents /
+        100,
 
-    expense:
-      completedExpenseCents /
-      100,
+      expense:
+        completedExpenseCents /
+        100,
 
-    balance:
-      (
-        completedIncomeCents -
-        completedExpenseCents
-      ) / 100,
+      balance:
+        (
+          completedIncomeCents -
+          completedExpenseCents
+        ) /
+        100,
 
-    pendingIncome:
-      pendingIncomeCents /
-      100,
+      pendingIncome:
+        pendingIncomeCents /
+        100,
 
-    pendingExpense:
-      pendingExpenseCents /
-      100,
+      pendingExpense:
+        pendingExpenseCents /
+        100,
 
-    transactionCount:
-      summary?.transactionCount ??
-      0,
-  });
+      transactionCount:
+        summary
+          ?.transactionCount ??
+        0,
+    });
 }
 
 export async function updateTransaction(
@@ -733,44 +847,57 @@ export async function updateTransaction(
     );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const id =
-    getRouteId(request);
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
 
   const parsedBody =
-    updateTransactionSchema.safeParse(
-      request.body,
-    );
+    updateTransactionSchema
+      .safeParse(
+        request.body,
+      );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados de alteração inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados de alteração inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -779,67 +906,80 @@ export async function updateTransaction(
     parsedBody.data;
 
   const updateData:
-    Record<string, unknown> = {
-    updatedBy:
-      userId,
-  };
+    Record<
+      string,
+      unknown
+    > = {
+      updatedBy:
+        userId,
+    };
 
   if (
-    data.type !== undefined
+    data.type !==
+    undefined
   ) {
     updateData.type =
       data.type;
   }
 
   if (
-    data.description !== undefined
+    data.description !==
+    undefined
   ) {
     updateData.description =
       data.description.trim();
   }
 
   if (
-    data.amount !== undefined
+    data.amount !==
+    undefined
   ) {
     updateData.amountCents =
       Math.round(
-        data.amount * 100,
+        data.amount *
+          100,
       );
   }
 
   if (
-    data.category !== undefined
+    data.category !==
+    undefined
   ) {
     updateData.category =
       data.category.trim();
   }
 
   if (
-    data.date !== undefined
+    data.date !==
+    undefined
   ) {
     updateData.date =
       data.date;
   }
 
   if (
-    data.paymentMethod !== undefined
+    data.paymentMethod !==
+    undefined
   ) {
     updateData.paymentMethod =
       data.paymentMethod;
   }
 
   if (
-    data.status !== undefined
+    data.status !==
+    undefined
   ) {
     updateData.status =
       data.status;
   }
 
   if (
-    data.notes !== undefined
+    data.notes !==
+    undefined
   ) {
     updateData.notes =
-      data.notes?.trim() ||
+      data.notes
+        ?.trim() ||
       null;
   }
 
@@ -853,10 +993,12 @@ export async function updateTransaction(
           deletedAt:
             null,
         },
+
         {
           $set:
             updateData,
         },
+
         {
           returnDocument:
             "after",
@@ -867,23 +1009,80 @@ export async function updateTransaction(
       );
 
   if (!transaction) {
-    response.status(404).json({
-      message:
-        "Movimentação não encontrada.",
-    });
+    response
+      .status(404)
+      .json({
+        message:
+          "Movimentação não encontrada.",
+      });
 
     return;
   }
 
-  response.status(200).json({
-    message:
-      "Movimentação atualizada com sucesso.",
+  await recordAuditLog({
+    request,
+    userId,
 
-    transaction:
-      serializeTransaction(
-        transaction,
-      ),
+    action:
+      "update",
+
+    resource:
+      "transaction",
+
+    resourceId:
+      transaction
+        ._id
+        .toString(),
+
+    description:
+      `Atualizou a movimentação "${transaction.description}".`,
+
+    metadata: {
+      changedFields:
+        Object.keys(
+          data,
+        ),
+
+      currentValues: {
+        type:
+          transaction.type,
+
+        description:
+          transaction.description,
+
+        amount:
+          transaction.amountCents /
+          100,
+
+        category:
+          transaction.category,
+
+        date:
+          transaction.date,
+
+        paymentMethod:
+          transaction.paymentMethod,
+
+        status:
+          transaction.status,
+
+        notes:
+          transaction.notes,
+      },
+    },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Movimentação atualizada com sucesso.",
+
+      transaction:
+        serializeTransaction(
+          transaction,
+        ),
+    });
 }
 
 export async function deleteTransaction(
@@ -896,25 +1095,33 @@ export async function deleteTransaction(
     );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const id =
-    getRouteId(request);
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
@@ -929,6 +1136,7 @@ export async function deleteTransaction(
           deletedAt:
             null,
         },
+
         {
           $set: {
             deletedAt:
@@ -941,6 +1149,7 @@ export async function deleteTransaction(
               userId,
           },
         },
+
         {
           returnDocument:
             "after",
@@ -948,18 +1157,53 @@ export async function deleteTransaction(
       );
 
   if (!transaction) {
-    response.status(404).json({
-      message:
-        "Movimentação não encontrada.",
-    });
+    response
+      .status(404)
+      .json({
+        message:
+          "Movimentação não encontrada.",
+      });
 
     return;
   }
 
-  response.status(200).json({
-    message:
-      "Movimentação enviada para a lixeira.",
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "move_to_trash",
+
+    resource:
+      "transaction",
+
+    resourceId:
+      transaction
+        ._id
+        .toString(),
+
+    description:
+      `Enviou a movimentação "${transaction.description}" para a lixeira.`,
+
+    metadata: {
+      type:
+        transaction.type,
+
+      amount:
+        transaction.amountCents /
+        100,
+
+      category:
+        transaction.category,
+    },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Movimentação enviada para a lixeira.",
+    });
 }
 
 export async function restoreTransaction(
@@ -967,68 +1211,127 @@ export async function restoreTransaction(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
-  const id = getRouteId(request);
+  const id =
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
 
   const transaction =
-    await TransactionModel.findOneAndUpdate(
-      {
-        _id: id,
+    await TransactionModel
+      .findOneAndUpdate(
+        {
+          _id:
+            id,
 
-        deletedAt: {
-          $ne: null,
+          deletedAt: {
+            $ne:
+              null,
+          },
         },
-      },
-      {
-        $set: {
-          deletedAt: null,
-          deletedBy: null,
-          updatedBy: userId,
+
+        {
+          $set: {
+            deletedAt:
+              null,
+
+            deletedBy:
+              null,
+
+            updatedBy:
+              userId,
+          },
         },
-      },
-      {
-        returnDocument: "after",
-      },
-    );
+
+        {
+          returnDocument:
+            "after",
+        },
+      );
 
   if (!transaction) {
-    response.status(404).json({
-      message:
-        "Movimentação excluída não encontrada.",
-    });
+    response
+      .status(404)
+      .json({
+        message:
+          "Movimentação excluída não encontrada.",
+      });
 
     return;
   }
 
-  response.status(200).json({
-    message:
-      "Movimentação restaurada com sucesso.",
+  await recordAuditLog({
+    request,
+    userId,
 
-    transaction:
-      serializeTransaction(transaction),
+    action:
+      "restore",
+
+    resource:
+      "transaction",
+
+    resourceId:
+      transaction
+        ._id
+        .toString(),
+
+    description:
+      `Restaurou a movimentação "${transaction.description}".`,
+
+    metadata: {
+      type:
+        transaction.type,
+
+      amount:
+        transaction.amountCents /
+        100,
+
+      category:
+        transaction.category,
+    },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Movimentação restaurada com sucesso.",
+
+      transaction:
+        serializeTransaction(
+          transaction,
+        ),
+    });
 }
 
 export async function listDeletedTransactions(
@@ -1040,16 +1343,20 @@ export async function listDeletedTransactions(
       request.query,
     );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Filtros da lixeira inválidos.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros da lixeira inválidos.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -1057,49 +1364,169 @@ export async function listDeletedTransactions(
   const {
     page,
     limit,
-  } = parsedQuery.data;
+  } =
+    parsedQuery.data;
 
   const skip =
-    (page - 1) * limit;
+    (page - 1) *
+    limit;
 
   const filter = {
     deletedAt: {
-      $ne: null,
+      $ne:
+        null,
     },
   };
 
   const [
     transactions,
     total,
-  ] = await Promise.all([
-    TransactionModel.find(filter)
-      .sort({
-        deletedAt: -1,
-      })
-      .skip(skip)
-      .limit(limit),
+  ] =
+    await Promise.all([
+      TransactionModel
+        .find(filter)
+        .sort({
+          deletedAt:
+            -1,
+        })
+        .skip(skip)
+        .limit(limit),
 
-    TransactionModel.countDocuments(
-      filter,
-    ),
-  ]);
+      TransactionModel
+        .countDocuments(
+          filter,
+        ),
+    ]);
 
-  response.status(200).json({
-    transactions:
-      transactions.map(
-        (transaction) =>
-          serializeTransaction(
-            transaction,
+  response
+    .status(200)
+    .json({
+      transactions:
+        transactions.map(
+          (transaction) =>
+            serializeTransaction(
+              transaction,
+            ),
+        ),
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
           ),
-      ),
+      },
+    });
+}
 
-    pagination: {
-      page,
-      limit,
-      total,
+export async function permanentlyDeleteTransaction(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const userId =
+    getAuthenticatedUserId(
+      request,
+    );
 
-      totalPages:
-        Math.ceil(total / limit),
+  if (!userId) {
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
+
+    return;
+  }
+
+  const id =
+    getRouteId(
+      request,
+    );
+
+  if (
+    !id ||
+    !Types.ObjectId.isValid(
+      id,
+    )
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
+
+    return;
+  }
+
+  const transaction =
+    await TransactionModel
+      .findOneAndDelete({
+        _id:
+          id,
+
+        deletedAt: {
+          $ne:
+            null,
+        },
+      });
+
+  if (!transaction) {
+    response
+      .status(404)
+      .json({
+        message:
+          "Movimentação excluída não encontrada.",
+      });
+
+    return;
+  }
+
+  /*
+   * O log é criado depois de obtermos o
+   * documento excluído. Assim ainda temos
+   * descrição, categoria, tipo e valor.
+   */
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "permanent_delete",
+
+    resource:
+      "transaction",
+
+    resourceId:
+      transaction
+        ._id
+        .toString(),
+
+    description:
+      `Excluiu permanentemente a movimentação "${transaction.description}".`,
+
+    metadata: {
+      type:
+        transaction.type,
+
+      amount:
+        transaction.amountCents /
+        100,
+
+      category:
+        transaction.category,
     },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Movimentação excluída permanentemente.",
+    });
 }

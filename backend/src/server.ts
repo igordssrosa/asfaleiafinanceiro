@@ -24,6 +24,10 @@ import {
   reportRoutes,
 } from "./routes/reportRoutes.js";
 
+import {
+  auditLogRoutes,
+} from "./routes/auditLogRoutes.js";
+
 const app = express();
 
 const port = Number(process.env.PORT) || 3333;
@@ -94,6 +98,11 @@ app.use(
 app.use(
   "/api/reports",
   reportRoutes,
+);
+
+app.use(
+  "/api/audit-logs",
+  auditLogRoutes,
 );
 
 app.get("/api/health", async (_request, response) => {

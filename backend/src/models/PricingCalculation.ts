@@ -42,6 +42,9 @@ export interface IPricingCalculation {
   createdBy: Types.ObjectId;
   updatedBy: Types.ObjectId;
 
+  deletedAt: Date | null;
+  deletedBy: Types.ObjectId | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -224,6 +227,17 @@ const pricingCalculationSchema =
         ref: "User",
         required: true,
       },
+
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+
+      deletedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
     },
     {
       timestamps: true,
@@ -232,6 +246,7 @@ const pricingCalculationSchema =
   );
 
 pricingCalculationSchema.index({
+  deletedAt: 1,
   createdAt: -1,
 });
 

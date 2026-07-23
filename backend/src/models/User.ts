@@ -1,5 +1,6 @@
 import { model, Schema } from "mongoose";
 
+
 export type UserRole = "owner";
 
 export interface IUser {
@@ -69,4 +70,8 @@ userSchema.index(
   },
 );
 
-export const UserModel = model<IUser>("User", userSchema);
+export const UserModel =
+  model<IUser>(
+    "User",
+    userSchema,
+  );

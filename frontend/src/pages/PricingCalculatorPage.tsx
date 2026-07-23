@@ -9,6 +9,7 @@ import { ApiError } from "../api/api";
 
 import {
   calculatePricingRequest,
+  deletePricingCalculationRequest,
   listPricingRequest,
   savePricingRequest,
 } from "../api/pricing";
@@ -83,19 +84,29 @@ function buildPricingInput(
 ): PricingInput | null {
   const costs = {
     productCost:
-      parseDecimal(form.productCost),
+      parseDecimal(
+        form.productCost,
+      ),
 
     packagingCost:
-      parseDecimal(form.packagingCost),
+      parseDecimal(
+        form.packagingCost,
+      ),
 
     operationalCost:
-      parseDecimal(form.operationalCost),
+      parseDecimal(
+        form.operationalCost,
+      ),
 
     shippingSubsidy:
-      parseDecimal(form.shippingSubsidy),
+      parseDecimal(
+        form.shippingSubsidy,
+      ),
 
     otherCost:
-      parseDecimal(form.otherCost),
+      parseDecimal(
+        form.otherCost,
+      ),
   };
 
   const rates = {
@@ -173,9 +184,12 @@ function buildPricingInput(
   }
 
   return {
-    name: form.name.trim(),
+    name:
+      form.name.trim(),
+
     productName:
       form.productName.trim(),
+
     costs,
     rates,
   };
@@ -190,7 +204,9 @@ function formatDateTime(
       dateStyle: "short",
       timeStyle: "short",
     },
-  ).format(new Date(value));
+  ).format(
+    new Date(value),
+  );
 }
 
 export function PricingCalculatorPage() {
@@ -226,6 +242,13 @@ export function PricingCalculatorPage() {
   ] = useState(false);
 
   const [
+    deletingId,
+    setDeletingId,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const [
     isLoadingHistory,
     setIsLoadingHistory,
   ] = useState(true);
@@ -241,33 +264,38 @@ export function PricingCalculatorPage() {
   ] = useState("");
 
   const loadHistory =
-    useCallback(async (): Promise<void> => {
-      setIsLoadingHistory(true);
+    useCallback(
+      async (): Promise<void> => {
+        setIsLoadingHistory(true);
 
-      try {
-        const response =
-          await listPricingRequest(
-            1,
-            50,
-          );
+        try {
+          const response =
+            await listPricingRequest(
+              1,
+              50,
+            );
 
-        setCalculations(
-          response.calculations,
-        );
-      } catch (error) {
-        if (error instanceof ApiError) {
-          setErrorMessage(
-            error.message,
+          setCalculations(
+            response.calculations,
           );
-        } else {
-          setErrorMessage(
-            "Não foi possível carregar o histórico.",
-          );
+        } catch (error) {
+          if (
+            error instanceof ApiError
+          ) {
+            setErrorMessage(
+              error.message,
+            );
+          } else {
+            setErrorMessage(
+              "Não foi possível carregar o histórico.",
+            );
+          }
+        } finally {
+          setIsLoadingHistory(false);
         }
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    }, []);
+      },
+      [],
+    );
 
   useEffect(() => {
     void loadHistory();
@@ -286,53 +314,57 @@ export function PricingCalculatorPage() {
 
     let isCancelled = false;
 
-    const timer = window.setTimeout(
-      async () => {
-        setIsCalculating(true);
+    const timer =
+      window.setTimeout(
+        async () => {
+          setIsCalculating(true);
 
-        try {
-          const response =
-            await calculatePricingRequest(
-              input,
-            );
+          try {
+            const response =
+              await calculatePricingRequest(
+                input,
+              );
 
-          if (!isCancelled) {
-            setResult(
-              response.result,
-            );
+            if (!isCancelled) {
+              setResult(
+                response.result,
+              );
 
-            setErrorMessage("");
+              setErrorMessage("");
+            }
+          } catch (error) {
+            if (isCancelled) {
+              return;
+            }
+
+            setResult(null);
+
+            if (
+              error instanceof ApiError
+            ) {
+              setErrorMessage(
+                error.message,
+              );
+            } else {
+              setErrorMessage(
+                "Não foi possível calcular o preço.",
+              );
+            }
+          } finally {
+            if (!isCancelled) {
+              setIsCalculating(false);
+            }
           }
-        } catch (error) {
-          if (isCancelled) {
-            return;
-          }
-
-          setResult(null);
-
-          if (
-            error instanceof ApiError
-          ) {
-            setErrorMessage(
-              error.message,
-            );
-          } else {
-            setErrorMessage(
-              "Não foi possível calcular o preço.",
-            );
-          }
-        } finally {
-          if (!isCancelled) {
-            setIsCalculating(false);
-          }
-        }
-      },
-      400,
-    );
+        },
+        400,
+      );
 
     return () => {
       isCancelled = true;
-      window.clearTimeout(timer);
+
+      window.clearTimeout(
+        timer,
+      );
     };
   }, [form]);
 
@@ -342,10 +374,12 @@ export function PricingCalculatorPage() {
     field: Key,
     value: PricingFormState[Key],
   ): void {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }));
+    setForm(
+      (currentForm) => ({
+        ...currentForm,
+        [field]: value,
+      }),
+    );
 
     setSuccessMessage("");
   }
@@ -358,7 +392,8 @@ export function PricingCalculatorPage() {
   }
 
   async function handleSave(
-    event: FormEvent<HTMLFormElement>,
+    event:
+      FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
 
@@ -394,7 +429,9 @@ export function PricingCalculatorPage() {
 
       await loadHistory();
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (
+        error instanceof ApiError
+      ) {
         setErrorMessage(
           error.message,
         );
@@ -409,7 +446,8 @@ export function PricingCalculatorPage() {
   }
 
   function handleLoadCalculation(
-    calculation: PricingCalculation,
+    calculation:
+      PricingCalculation,
   ): void {
     setForm({
       name:
@@ -420,52 +458,72 @@ export function PricingCalculatorPage() {
 
       productCost:
         numberToInput(
-          calculation.costs.productCost,
+          calculation
+            .costs
+            .productCost,
         ),
 
       packagingCost:
         numberToInput(
-          calculation.costs.packagingCost,
+          calculation
+            .costs
+            .packagingCost,
         ),
 
       operationalCost:
         numberToInput(
-          calculation.costs.operationalCost,
+          calculation
+            .costs
+            .operationalCost,
         ),
 
       shippingSubsidy:
         numberToInput(
-          calculation.costs.shippingSubsidy,
+          calculation
+            .costs
+            .shippingSubsidy,
         ),
 
       otherCost:
         numberToInput(
-          calculation.costs.otherCost,
+          calculation
+            .costs
+            .otherCost,
         ),
 
       paymentFeePercent:
         numberToInput(
-          calculation.rates.paymentFeePercent,
+          calculation
+            .rates
+            .paymentFeePercent,
         ),
 
       marketplaceFeePercent:
         numberToInput(
-          calculation.rates.marketplaceFeePercent,
+          calculation
+            .rates
+            .marketplaceFeePercent,
         ),
 
       taxPercent:
         numberToInput(
-          calculation.rates.taxPercent,
+          calculation
+            .rates
+            .taxPercent,
         ),
 
       targetMarginPercent:
         numberToInput(
-          calculation.rates.targetMarginPercent,
+          calculation
+            .rates
+            .targetMarginPercent,
         ),
 
       discountPercent:
         numberToInput(
-          calculation.rates.discountPercent,
+          calculation
+            .rates
+            .discountPercent,
         ),
     });
 
@@ -474,6 +532,7 @@ export function PricingCalculatorPage() {
     );
 
     setErrorMessage("");
+
     setSuccessMessage(
       "Cálculo carregado no formulário.",
     );
@@ -484,6 +543,53 @@ export function PricingCalculatorPage() {
     });
   }
 
+  async function handleDeleteCalculation(
+    calculation:
+      PricingCalculation,
+  ): Promise<void> {
+    const confirmed =
+      window.confirm(
+        `Enviar a precificação "${calculation.name}" para a lixeira?`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingId(
+      calculation.id,
+    );
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      await deletePricingCalculationRequest(
+        calculation.id,
+      );
+
+      setSuccessMessage(
+        "Precificação enviada para a lixeira.",
+      );
+
+      await loadHistory();
+    } catch (error) {
+      if (
+        error instanceof ApiError
+      ) {
+        setErrorMessage(
+          error.message,
+        );
+      } else {
+        setErrorMessage(
+          "Não foi possível excluir a precificação.",
+        );
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <>
       <header className="dashboard-header">
@@ -492,11 +598,14 @@ export function PricingCalculatorPage() {
             Formação de preço
           </p>
 
-          <h1>Calculadora de preço</h1>
+          <h1>
+            Calculadora de preço
+          </h1>
 
           <p className="muted-text">
             Calcule o preço de venda com
-            custos, taxas, margem e desconto.
+            custos, taxas, margem e
+            desconto.
           </p>
         </div>
 
@@ -507,11 +616,14 @@ export function PricingCalculatorPage() {
         <section className="empty-section">
           <div className="section-heading">
             <div>
-              <h2>Dados da precificação</h2>
+              <h2>
+                Dados da precificação
+              </h2>
 
               <p>
-                Os valores devem representar
-                o custo de uma unidade.
+                Os valores devem
+                representar o custo de uma
+                unidade.
               </p>
             </div>
 
@@ -533,7 +645,9 @@ export function PricingCalculatorPage() {
 
               <div className="form-grid pricing-form-grid">
                 <label className="form-field">
-                  <span>Nome do cálculo</span>
+                  <span>
+                    Nome do cálculo
+                  </span>
 
                   <input
                     type="text"
@@ -556,7 +670,9 @@ export function PricingCalculatorPage() {
 
                   <input
                     type="text"
-                    value={form.productName}
+                    value={
+                      form.productName
+                    }
                     onChange={(event) =>
                       updateForm(
                         "productName",
@@ -573,16 +689,22 @@ export function PricingCalculatorPage() {
             </div>
 
             <div className="pricing-group">
-              <h3>Custos por unidade</h3>
+              <h3>
+                Custos por unidade
+              </h3>
 
               <div className="form-grid pricing-form-grid">
                 <label className="form-field">
-                  <span>Custo do produto</span>
+                  <span>
+                    Custo do produto
+                  </span>
 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.productCost}
+                    value={
+                      form.productCost
+                    }
                     onChange={(event) =>
                       updateForm(
                         "productCost",
@@ -600,7 +722,9 @@ export function PricingCalculatorPage() {
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.packagingCost}
+                    value={
+                      form.packagingCost
+                    }
                     onChange={(event) =>
                       updateForm(
                         "packagingCost",
@@ -612,12 +736,16 @@ export function PricingCalculatorPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>Custo operacional</span>
+                  <span>
+                    Custo operacional
+                  </span>
 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.operationalCost}
+                    value={
+                      form.operationalCost
+                    }
                     onChange={(event) =>
                       updateForm(
                         "operationalCost",
@@ -629,12 +757,16 @@ export function PricingCalculatorPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>Frete subsidiado</span>
+                  <span>
+                    Frete subsidiado
+                  </span>
 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.shippingSubsidy}
+                    value={
+                      form.shippingSubsidy
+                    }
                     onChange={(event) =>
                       updateForm(
                         "shippingSubsidy",
@@ -646,12 +778,16 @@ export function PricingCalculatorPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>Outros custos</span>
+                  <span>
+                    Outros custos
+                  </span>
 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.otherCost}
+                    value={
+                      form.otherCost
+                    }
                     onChange={(event) =>
                       updateForm(
                         "otherCost",
@@ -665,7 +801,9 @@ export function PricingCalculatorPage() {
             </div>
 
             <div className="pricing-group">
-              <h3>Taxas e margem</h3>
+              <h3>
+                Taxas e margem
+              </h3>
 
               <div className="form-grid pricing-form-grid">
                 <label className="form-field">
@@ -711,12 +849,16 @@ export function PricingCalculatorPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>Impostos (%)</span>
+                  <span>
+                    Impostos (%)
+                  </span>
 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.taxPercent}
+                    value={
+                      form.taxPercent
+                    }
                     onChange={(event) =>
                       updateForm(
                         "taxPercent",
@@ -819,7 +961,9 @@ export function PricingCalculatorPage() {
               Resultado
             </p>
 
-            <h2>Preço sugerido</h2>
+            <h2>
+              Preço sugerido
+            </h2>
           </div>
 
           {!result ? (
@@ -832,11 +976,14 @@ export function PricingCalculatorPage() {
           ) : (
             <>
               <div className="pricing-main-result">
-                <span>Preço de vitrine</span>
+                <span>
+                  Preço de vitrine
+                </span>
 
                 <strong>
                   {formatCurrency(
-                    result.suggestedListPrice,
+                    result
+                      .suggestedListPrice,
                   )}
                 </strong>
 
@@ -854,27 +1001,34 @@ export function PricingCalculatorPage() {
 
                   <strong>
                     {formatCurrency(
-                      result.discountedSalePrice,
+                      result
+                        .discountedSalePrice,
                     )}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Preço mínimo</span>
+                  <span>
+                    Preço mínimo
+                  </span>
 
                   <strong>
                     {formatCurrency(
-                      result.targetSalePrice,
+                      result
+                        .targetSalePrice,
                     )}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Custos fixos</span>
+                  <span>
+                    Custos fixos
+                  </span>
 
                   <strong>
                     {formatCurrency(
-                      result.totalFixedCost,
+                      result
+                        .totalFixedCost,
                     )}
                   </strong>
                 </div>
@@ -886,38 +1040,48 @@ export function PricingCalculatorPage() {
 
                   <strong>
                     {formatCurrency(
-                      result.expectedVariableCosts,
+                      result
+                        .expectedVariableCosts,
                     )}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Lucro esperado</span>
+                  <span>
+                    Lucro esperado
+                  </span>
 
                   <strong>
                     {formatCurrency(
-                      result.expectedProfit,
+                      result
+                        .expectedProfit,
                     )}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Margem real</span>
+                  <span>
+                    Margem real
+                  </span>
 
                   <strong>
                     {
-                      result.achievedMarginPercent
+                      result
+                        .achievedMarginPercent
                     }
                     %
                   </strong>
                 </div>
 
                 <div>
-                  <span>Taxas totais</span>
+                  <span>
+                    Taxas totais
+                  </span>
 
                   <strong>
                     {
-                      result.totalVariableRatePercent
+                      result
+                        .totalVariableRatePercent
                     }
                     %
                   </strong>
@@ -966,11 +1130,13 @@ export function PricingCalculatorPage() {
                   <th>Cálculo</th>
                   <th>Produto</th>
                   <th>Custo</th>
-                  <th>Preço de vitrine</th>
+                  <th>
+                    Preço de vitrine
+                  </th>
                   <th>Preço final</th>
                   <th>Lucro</th>
                   <th>Margem</th>
-                  <th>Ação</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
 
@@ -978,7 +1144,9 @@ export function PricingCalculatorPage() {
                 {calculations.map(
                   (calculation) => (
                     <tr
-                      key={calculation.id}
+                      key={
+                        calculation.id
+                      }
                     >
                       <td>
                         {formatDateTime(
@@ -987,7 +1155,9 @@ export function PricingCalculatorPage() {
                       </td>
 
                       <td>
-                        {calculation.name}
+                        {
+                          calculation.name
+                        }
                       </td>
 
                       <td>
@@ -998,52 +1168,82 @@ export function PricingCalculatorPage() {
 
                       <td>
                         {formatCurrency(
-                          calculation.result
+                          calculation
+                            .result
                             .totalFixedCost,
                         )}
                       </td>
 
                       <td>
                         {formatCurrency(
-                          calculation.result
+                          calculation
+                            .result
                             .suggestedListPrice,
                         )}
                       </td>
 
                       <td>
                         {formatCurrency(
-                          calculation.result
+                          calculation
+                            .result
                             .discountedSalePrice,
                         )}
                       </td>
 
                       <td>
                         {formatCurrency(
-                          calculation.result
+                          calculation
+                            .result
                             .expectedProfit,
                         )}
                       </td>
 
                       <td>
                         {
-                          calculation.result
+                          calculation
+                            .result
                             .achievedMarginPercent
                         }
                         %
                       </td>
 
                       <td>
-                        <button
-                          type="button"
-                          className="table-button"
-                          onClick={() =>
-                            handleLoadCalculation(
-                              calculation,
-                            )
-                          }
-                        >
-                          Carregar
-                        </button>
+                        <div className="table-actions">
+                          <button
+                            type="button"
+                            className="table-button"
+                            disabled={
+                              deletingId ===
+                              calculation.id
+                            }
+                            onClick={() =>
+                              handleLoadCalculation(
+                                calculation,
+                              )
+                            }
+                          >
+                            Carregar
+                          </button>
+
+                          <button
+                            type="button"
+                            className="table-button danger-button"
+                            disabled={
+                              deletingId ===
+                              calculation.id
+                            }
+                            onClick={() =>
+                              void handleDeleteCalculation(
+                                calculation,
+                              )
+                            }
+                          >
+                            {deletingId ===
+                            calculation.id
+                              ? "Excluindo..."
+                              : "Excluir"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ),

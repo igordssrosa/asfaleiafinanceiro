@@ -3,13 +3,22 @@ import type {
   Response,
 } from "express";
 
-import { Types } from "mongoose";
-import { z } from "zod";
+import {
+  Types,
+} from "mongoose";
+
+import {
+  z,
+} from "zod";
 
 import {
   ProductModel,
   type IProduct,
 } from "../models/Product.js";
+
+import {
+  recordAuditLog,
+} from "../services/auditLogService.js";
 
 type ProductWithId =
   IProduct & {
@@ -21,7 +30,10 @@ const moneySchema = z
     z.number(),
     z.string().trim(),
   ])
-  .transform((value) => Number(value))
+  .transform(
+    (value) =>
+      Number(value),
+  )
   .refine(
     (value) =>
       Number.isFinite(value) &&
@@ -37,119 +49,128 @@ const moneySchema = z
     (value) =>
       Math.abs(
         value * 100 -
-          Math.round(value * 100),
+          Math.round(
+            value * 100,
+          ),
       ) < 0.000001,
     "O valor deve possuir no máximo duas casas decimais.",
   );
 
-const productStatusSchema = z.enum([
-  "active",
-  "inactive",
-]);
+const productStatusSchema =
+  z.enum([
+    "active",
+    "inactive",
+  ]);
 
-const productSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(
-      2,
-      "Informe o nome do produto.",
-    )
-    .max(120),
+const productSchema =
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(
+        2,
+        "Informe o nome do produto.",
+      )
+      .max(120),
 
-  sku: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .nullable(),
+    sku: z
+      .string()
+      .trim()
+      .max(50)
+      .optional()
+      .nullable(),
 
-  category: z
-    .string()
-    .trim()
-    .min(
-      2,
-      "Informe a categoria.",
-    )
-    .max(60),
+    category: z
+      .string()
+      .trim()
+      .min(
+        2,
+        "Informe a categoria.",
+      )
+      .max(60),
 
-  description: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .nullable(),
+    description: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .nullable(),
 
-  unitCost: moneySchema,
+    unitCost:
+      moneySchema,
 
-  salePrice: moneySchema,
+    salePrice:
+      moneySchema,
 
-  status:
-    productStatusSchema.default(
-      "active",
-    ),
+    status:
+      productStatusSchema.default(
+        "active",
+      ),
 
-  notes: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .nullable(),
-});
+    notes: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .nullable(),
+  });
 
 const updateProductSchema =
   productSchema
     .partial()
     .refine(
       (data) =>
-        Object.keys(data).length > 0,
+        Object.keys(data).length >
+        0,
       "Informe pelo menos um campo para alteração.",
     );
 
-const listProductsSchema = z.object({
-  search: z
-    .string()
-    .trim()
-    .max(120)
-    .optional(),
+const listProductsSchema =
+  z.object({
+    search: z
+      .string()
+      .trim()
+      .max(120)
+      .optional(),
 
-  category: z
-    .string()
-    .trim()
-    .max(60)
-    .optional(),
+    category: z
+      .string()
+      .trim()
+      .max(60)
+      .optional(),
 
-  status:
-    productStatusSchema.optional(),
+    status:
+      productStatusSchema.optional(),
 
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1),
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20),
-});
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+  });
 
-const listTrashSchema = z.object({
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1),
+const listTrashSchema =
+  z.object({
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20),
-});
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20),
+  });
 
 function getAuthenticatedUserId(
   request: Request,
@@ -159,12 +180,16 @@ function getAuthenticatedUserId(
 
   if (
     !userId ||
-    !Types.ObjectId.isValid(userId)
+    !Types.ObjectId.isValid(
+      userId,
+    )
   ) {
     return null;
   }
 
-  return new Types.ObjectId(userId);
+  return new Types.ObjectId(
+    userId,
+  );
 }
 
 function getRouteId(
@@ -174,7 +199,8 @@ function getRouteId(
     request.params.id;
 
   if (
-    typeof routeId === "string"
+    typeof routeId ===
+    "string"
   ) {
     return routeId;
   }
@@ -182,25 +208,38 @@ function getRouteId(
   if (
     Array.isArray(routeId)
   ) {
-    return routeId[0] ?? null;
+    return (
+      routeId[0] ??
+      null
+    );
   }
 
   return null;
 }
 
 function normalizeSku(
-  sku: string | null | undefined,
+  sku:
+    | string
+    | null
+    | undefined,
 ): string | null {
   const normalized =
-    sku?.trim().toUpperCase();
+    sku
+      ?.trim()
+      .toUpperCase();
 
-  return normalized || null;
+  return (
+    normalized ||
+    null
+  );
 }
 
 function toCents(
   value: number,
 ): number {
-  return Math.round(value * 100);
+  return Math.round(
+    value * 100,
+  );
 }
 
 function serializeProduct(
@@ -208,7 +247,9 @@ function serializeProduct(
 ) {
   return {
     id:
-      product._id.toString(),
+      product
+        ._id
+        .toString(),
 
     name:
       product.name,
@@ -223,10 +264,12 @@ function serializeProduct(
       product.description,
 
     unitCost:
-      product.unitCostCents / 100,
+      product.unitCostCents /
+      100,
 
     salePrice:
-      product.salePriceCents / 100,
+      product.salePriceCents /
+      100,
 
     status:
       product.status,
@@ -235,16 +278,21 @@ function serializeProduct(
       product.notes,
 
     createdBy:
-      product.createdBy.toString(),
+      product
+        .createdBy
+        .toString(),
 
     updatedBy:
-      product.updatedBy.toString(),
+      product
+        .updatedBy
+        .toString(),
 
     deletedAt:
       product.deletedAt,
 
     deletedBy:
-      product.deletedBy?.toString() ??
+      product.deletedBy
+        ?.toString() ??
       null,
 
     createdAt:
@@ -259,7 +307,8 @@ function isDuplicateKeyError(
   error: unknown,
 ): boolean {
   if (
-    typeof error !== "object" ||
+    typeof error !==
+      "object" ||
     error === null ||
     !("code" in error)
   ) {
@@ -267,8 +316,11 @@ function isDuplicateKeyError(
   }
 
   return (
-    (error as { code?: unknown })
-      .code === 11000
+    (
+      error as {
+        code?: unknown;
+      }
+    ).code === 11000
   );
 }
 
@@ -286,13 +338,17 @@ export async function createProduct(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
@@ -302,16 +358,20 @@ export async function createProduct(
       request.body,
     );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados do produto inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados do produto inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -326,20 +386,27 @@ export async function createProduct(
           data.name.trim(),
 
         sku:
-          normalizeSku(data.sku),
+          normalizeSku(
+            data.sku,
+          ),
 
         category:
           data.category.trim(),
 
         description:
-          data.description?.trim() ||
+          data.description
+            ?.trim() ||
           null,
 
         unitCostCents:
-          toCents(data.unitCost),
+          toCents(
+            data.unitCost,
+          ),
 
         salePriceCents:
-          toCents(data.salePrice),
+          toCents(
+            data.salePrice,
+          ),
 
         status:
           data.status,
@@ -361,21 +428,70 @@ export async function createProduct(
           null,
       });
 
-    response.status(201).json({
-      message:
-        "Produto cadastrado com sucesso.",
+    await recordAuditLog({
+      request,
+      userId,
 
-      product:
-        serializeProduct(product),
+      action:
+        "create",
+
+      resource:
+        "product",
+
+      resourceId:
+        product
+          ._id
+          .toString(),
+
+      description:
+        `Criou o produto "${product.name}".`,
+
+      metadata: {
+        name:
+          product.name,
+
+        sku:
+          product.sku,
+
+        category:
+          product.category,
+
+        unitCost:
+          product.unitCostCents /
+          100,
+
+        salePrice:
+          product.salePriceCents /
+          100,
+
+        status:
+          product.status,
+      },
     });
+
+    response
+      .status(201)
+      .json({
+        message:
+          "Produto cadastrado com sucesso.",
+
+        product:
+          serializeProduct(
+            product,
+          ),
+      });
   } catch (error) {
     if (
-      isDuplicateKeyError(error)
+      isDuplicateKeyError(
+        error,
+      )
     ) {
-      response.status(409).json({
-        message:
-          "Já existe um produto com esse SKU.",
-      });
+      response
+        .status(409)
+        .json({
+          message:
+            "Já existe um produto com esse SKU.",
+        });
 
       return;
     }
@@ -393,16 +509,20 @@ export async function listProducts(
       request.query,
     );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Filtros inválidos.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros inválidos.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -416,8 +536,12 @@ export async function listProducts(
   } = parsedQuery.data;
 
   const filter:
-    Record<string, unknown> = {
-      deletedAt: null,
+    Record<
+      string,
+      unknown
+    > = {
+      deletedAt:
+        null,
     };
 
   if (category) {
@@ -433,58 +557,76 @@ export async function listProducts(
   if (search) {
     const expression =
       new RegExp(
-        escapeRegularExpression(search),
+        escapeRegularExpression(
+          search,
+        ),
         "i",
       );
 
     filter.$or = [
       {
-        name: expression,
+        name:
+          expression,
       },
+
       {
-        sku: expression,
+        sku:
+          expression,
       },
+
       {
-        category: expression,
+        category:
+          expression,
       },
     ];
   }
 
   const skip =
-    (page - 1) * limit;
+    (page - 1) *
+    limit;
 
   const [
     products,
     total,
   ] = await Promise.all([
-    ProductModel.find(filter)
+    ProductModel
+      .find(filter)
       .sort({
-        createdAt: -1,
+        createdAt:
+          -1,
       })
       .skip(skip)
       .limit(limit),
 
-    ProductModel.countDocuments(
-      filter,
-    ),
+    ProductModel
+      .countDocuments(
+        filter,
+      ),
   ]);
 
-  response.status(200).json({
-    products:
-      products.map(
-        (product) =>
-          serializeProduct(product),
-      ),
+  response
+    .status(200)
+    .json({
+      products:
+        products.map(
+          (product) =>
+            serializeProduct(
+              product,
+            ),
+        ),
 
-    pagination: {
-      page,
-      limit,
-      total,
+      pagination: {
+        page,
+        limit,
+        total,
 
-      totalPages:
-        Math.ceil(total / limit),
-    },
-  });
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
+          ),
+      },
+    });
 }
 
 export async function updateProduct(
@@ -492,28 +634,38 @@ export async function updateProduct(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const id =
-    getRouteId(request);
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
@@ -523,16 +675,20 @@ export async function updateProduct(
       request.body,
     );
 
-  if (!parsedBody.success) {
-    response.status(400).json({
-      message:
-        "Dados de alteração inválidos.",
+  if (
+    !parsedBody.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Dados de alteração inválidos.",
 
-      errors:
-        parsedBody.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedBody.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -541,109 +697,202 @@ export async function updateProduct(
     parsedBody.data;
 
   const updateData:
-    Record<string, unknown> = {
+    Record<
+      string,
+      unknown
+    > = {
       updatedBy:
         userId,
     };
 
   if (
-    data.name !== undefined
+    data.name !==
+    undefined
   ) {
     updateData.name =
       data.name.trim();
   }
 
   if (
-    data.sku !== undefined
+    data.sku !==
+    undefined
   ) {
     updateData.sku =
-      normalizeSku(data.sku);
+      normalizeSku(
+        data.sku,
+      );
   }
 
   if (
-    data.category !== undefined
+    data.category !==
+    undefined
   ) {
     updateData.category =
       data.category.trim();
   }
 
   if (
-    data.description !== undefined
+    data.description !==
+    undefined
   ) {
     updateData.description =
-      data.description?.trim() ||
+      data.description
+        ?.trim() ||
       null;
   }
 
   if (
-    data.unitCost !== undefined
+    data.unitCost !==
+    undefined
   ) {
     updateData.unitCostCents =
-      toCents(data.unitCost);
+      toCents(
+        data.unitCost,
+      );
   }
 
   if (
-    data.salePrice !== undefined
+    data.salePrice !==
+    undefined
   ) {
     updateData.salePriceCents =
-      toCents(data.salePrice);
+      toCents(
+        data.salePrice,
+      );
   }
 
   if (
-    data.status !== undefined
+    data.status !==
+    undefined
   ) {
     updateData.status =
       data.status;
   }
 
   if (
-    data.notes !== undefined
+    data.notes !==
+    undefined
   ) {
     updateData.notes =
-      data.notes?.trim() ||
+      data.notes
+        ?.trim() ||
       null;
   }
 
   try {
     const product =
-      await ProductModel.findOneAndUpdate(
-        {
-          _id: id,
-          deletedAt: null,
-        },
-        {
-          $set: updateData,
-        },
-        {
-          returnDocument: "after",
-          runValidators: true,
-        },
-      );
+      await ProductModel
+        .findOneAndUpdate(
+          {
+            _id:
+              id,
+
+            deletedAt:
+              null,
+          },
+
+          {
+            $set:
+              updateData,
+          },
+
+          {
+            returnDocument:
+              "after",
+
+            runValidators:
+              true,
+          },
+        );
 
     if (!product) {
-      response.status(404).json({
-        message:
-          "Produto não encontrado.",
-      });
+      response
+        .status(404)
+        .json({
+          message:
+            "Produto não encontrado.",
+        });
 
       return;
     }
 
-    response.status(200).json({
-      message:
-        "Produto atualizado com sucesso.",
+    await recordAuditLog({
+      request,
+      userId,
 
-      product:
-        serializeProduct(product),
+      action:
+        "update",
+
+      resource:
+        "product",
+
+      resourceId:
+        product
+          ._id
+          .toString(),
+
+      description:
+        `Atualizou o produto "${product.name}".`,
+
+      metadata: {
+        changedFields:
+          Object.keys(
+            data,
+          ),
+
+        currentValues: {
+          name:
+            product.name,
+
+          sku:
+            product.sku,
+
+          category:
+            product.category,
+
+          description:
+            product.description,
+
+          unitCost:
+            product.unitCostCents /
+            100,
+
+          salePrice:
+            product.salePriceCents /
+            100,
+
+          status:
+            product.status,
+
+          notes:
+            product.notes,
+        },
+      },
     });
+
+    response
+      .status(200)
+      .json({
+        message:
+          "Produto atualizado com sucesso.",
+
+        product:
+          serializeProduct(
+            product,
+          ),
+      });
   } catch (error) {
     if (
-      isDuplicateKeyError(error)
+      isDuplicateKeyError(
+        error,
+      )
     ) {
-      response.status(409).json({
-        message:
-          "Já existe um produto com esse SKU.",
-      });
+      response
+        .status(409)
+        .json({
+          message:
+            "Já existe um produto com esse SKU.",
+        });
 
       return;
     }
@@ -657,68 +906,130 @@ export async function deleteProduct(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const id =
-    getRouteId(request);
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
 
   const product =
-    await ProductModel.findOneAndUpdate(
-      {
-        _id: id,
-        deletedAt: null,
-      },
-      {
-        $set: {
+    await ProductModel
+      .findOneAndUpdate(
+        {
+          _id:
+            id,
+
           deletedAt:
-            new Date(),
-
-          deletedBy:
-            userId,
-
-          updatedBy:
-            userId,
+            null,
         },
-      },
-      {
-        returnDocument: "after",
-      },
-    );
+
+        {
+          $set: {
+            deletedAt:
+              new Date(),
+
+            deletedBy:
+              userId,
+
+            updatedBy:
+              userId,
+          },
+        },
+
+        {
+          returnDocument:
+            "after",
+        },
+      );
 
   if (!product) {
-    response.status(404).json({
-      message:
-        "Produto não encontrado.",
-    });
+    response
+      .status(404)
+      .json({
+        message:
+          "Produto não encontrado.",
+      });
 
     return;
   }
 
-  response.status(200).json({
-    message:
-      "Produto enviado para a lixeira.",
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "move_to_trash",
+
+    resource:
+      "product",
+
+    resourceId:
+      product
+        ._id
+        .toString(),
+
+    description:
+      `Enviou o produto "${product.name}" para a lixeira.`,
+
+    metadata: {
+      name:
+        product.name,
+
+      sku:
+        product.sku,
+
+      category:
+        product.category,
+
+      unitCost:
+        product.unitCostCents /
+        100,
+
+      salePrice:
+        product.salePriceCents /
+        100,
+
+      status:
+        product.status,
+    },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Produto enviado para a lixeira.",
+    });
 }
 
 export async function listDeletedProducts(
@@ -730,16 +1041,20 @@ export async function listDeletedProducts(
       request.query,
     );
 
-  if (!parsedQuery.success) {
-    response.status(400).json({
-      message:
-        "Filtros da lixeira inválidos.",
+  if (
+    !parsedQuery.success
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Filtros da lixeira inválidos.",
 
-      errors:
-        parsedQuery.error
-          .flatten()
-          .fieldErrors,
-    });
+        errors:
+          parsedQuery.error
+            .flatten()
+            .fieldErrors,
+      });
 
     return;
   }
@@ -750,11 +1065,13 @@ export async function listDeletedProducts(
   } = parsedQuery.data;
 
   const skip =
-    (page - 1) * limit;
+    (page - 1) *
+    limit;
 
   const filter = {
     deletedAt: {
-      $ne: null,
+      $ne:
+        null,
     },
   };
 
@@ -762,34 +1079,44 @@ export async function listDeletedProducts(
     products,
     total,
   ] = await Promise.all([
-    ProductModel.find(filter)
+    ProductModel
+      .find(filter)
       .sort({
-        deletedAt: -1,
+        deletedAt:
+          -1,
       })
       .skip(skip)
       .limit(limit),
 
-    ProductModel.countDocuments(
-      filter,
-    ),
+    ProductModel
+      .countDocuments(
+        filter,
+      ),
   ]);
 
-  response.status(200).json({
-    products:
-      products.map(
-        (product) =>
-          serializeProduct(product),
-      ),
+  response
+    .status(200)
+    .json({
+      products:
+        products.map(
+          (product) =>
+            serializeProduct(
+              product,
+            ),
+        ),
 
-    pagination: {
-      page,
-      limit,
-      total,
+      pagination: {
+        page,
+        limit,
+        total,
 
-      totalPages:
-        Math.ceil(total / limit),
-    },
-  });
+        totalPages:
+          Math.ceil(
+            total /
+              limit,
+          ),
+      },
+    });
 }
 
 export async function restoreProduct(
@@ -797,67 +1124,253 @@ export async function restoreProduct(
   response: Response,
 ): Promise<void> {
   const userId =
-    getAuthenticatedUserId(request);
+    getAuthenticatedUserId(
+      request,
+    );
 
   if (!userId) {
-    response.status(401).json({
-      message:
-        "Autenticação necessária.",
-    });
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
 
     return;
   }
 
   const id =
-    getRouteId(request);
+    getRouteId(
+      request,
+    );
 
   if (
     !id ||
-    !Types.ObjectId.isValid(id)
+    !Types.ObjectId.isValid(
+      id,
+    )
   ) {
-    response.status(400).json({
-      message:
-        "Identificador inválido.",
-    });
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
 
     return;
   }
 
   const product =
-    await ProductModel.findOneAndUpdate(
-      {
-        _id: id,
+    await ProductModel
+      .findOneAndUpdate(
+        {
+          _id:
+            id,
 
-        deletedAt: {
-          $ne: null,
+          deletedAt: {
+            $ne:
+              null,
+          },
         },
-      },
-      {
-        $set: {
-          deletedAt: null,
-          deletedBy: null,
-          updatedBy: userId,
+
+        {
+          $set: {
+            deletedAt:
+              null,
+
+            deletedBy:
+              null,
+
+            updatedBy:
+              userId,
+          },
         },
-      },
-      {
-        returnDocument: "after",
-      },
-    );
+
+        {
+          returnDocument:
+            "after",
+        },
+      );
 
   if (!product) {
-    response.status(404).json({
-      message:
-        "Produto excluído não encontrado.",
-    });
+    response
+      .status(404)
+      .json({
+        message:
+          "Produto excluído não encontrado.",
+      });
 
     return;
   }
 
-  response.status(200).json({
-    message:
-      "Produto restaurado com sucesso.",
+  await recordAuditLog({
+    request,
+    userId,
 
-    product:
-      serializeProduct(product),
+    action:
+      "restore",
+
+    resource:
+      "product",
+
+    resourceId:
+      product
+        ._id
+        .toString(),
+
+    description:
+      `Restaurou o produto "${product.name}".`,
+
+    metadata: {
+      name:
+        product.name,
+
+      sku:
+        product.sku,
+
+      category:
+        product.category,
+
+      unitCost:
+        product.unitCostCents /
+        100,
+
+      salePrice:
+        product.salePriceCents /
+        100,
+
+      status:
+        product.status,
+    },
   });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Produto restaurado com sucesso.",
+
+      product:
+        serializeProduct(
+          product,
+        ),
+    });
+}
+
+export async function permanentlyDeleteProduct(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  const userId =
+    getAuthenticatedUserId(
+      request,
+    );
+
+  if (!userId) {
+    response
+      .status(401)
+      .json({
+        message:
+          "Autenticação necessária.",
+      });
+
+    return;
+  }
+
+  const id =
+    getRouteId(
+      request,
+    );
+
+  if (
+    !id ||
+    !Types.ObjectId.isValid(
+      id,
+    )
+  ) {
+    response
+      .status(400)
+      .json({
+        message:
+          "Identificador inválido.",
+      });
+
+    return;
+  }
+
+  const product =
+    await ProductModel
+      .findOneAndDelete({
+        _id:
+          id,
+
+        deletedAt: {
+          $ne:
+            null,
+        },
+      });
+
+  if (!product) {
+    response
+      .status(404)
+      .json({
+        message:
+          "Produto excluído não encontrado.",
+      });
+
+    return;
+  }
+
+  /*
+   * O documento retornado pelo MongoDB ainda
+   * contém os dados necessários para o log,
+   * mesmo após a exclusão definitiva.
+   */
+  await recordAuditLog({
+    request,
+    userId,
+
+    action:
+      "permanent_delete",
+
+    resource:
+      "product",
+
+    resourceId:
+      product
+        ._id
+        .toString(),
+
+    description:
+      `Excluiu permanentemente o produto "${product.name}".`,
+
+    metadata: {
+      name:
+        product.name,
+
+      sku:
+        product.sku,
+
+      category:
+        product.category,
+
+      unitCost:
+        product.unitCostCents /
+        100,
+
+      salePrice:
+        product.salePriceCents /
+        100,
+
+      status:
+        product.status,
+    },
+  });
+
+  response
+    .status(200)
+    .json({
+      message:
+        "Produto excluído permanentemente.",
+    });
 }

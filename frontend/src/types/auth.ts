@@ -15,10 +15,12 @@ export type LoginInput = {
 export type LoginResponse = {
   message: string;
   user: Owner;
+  sessionExpiresAt: string;
 };
 
 export type CurrentUserResponse = {
   user: Owner;
+  sessionExpiresAt: string;
 };
 
 export type MessageResponse = {

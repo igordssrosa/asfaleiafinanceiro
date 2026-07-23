@@ -124,3 +124,14 @@ export async function restoreProductRequest(
     },
   );
 }
+
+export async function permanentlyDeleteProductRequest(
+  id: string,
+): Promise<ProductMessageResponse> {
+  return apiFetch<ProductMessageResponse>(
+    `/products/${id}/permanent`,
+    {
+      method: "DELETE",
+    },
+  );
+}

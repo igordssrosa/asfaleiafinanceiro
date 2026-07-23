@@ -3,7 +3,11 @@ import { Router } from "express";
 import {
   calculatePrice,
   createPricingCalculation,
+  deletePricingCalculation,
+  listDeletedPricingCalculations,
   listPricingCalculations,
+  permanentlyDeletePricingCalculation,
+  restorePricingCalculation,
 } from "../controllers/pricingCalculationController.js";
 
 import {
@@ -17,34 +21,39 @@ pricingCalculationRoutes.use(
   requireAuth,
 );
 
-/*
- * POST /api/pricing-calculations/calculate
- *
- * Calcula o preço sem salvar no banco.
- */
 pricingCalculationRoutes.post(
   "/calculate",
   calculatePrice,
 );
 
-/*
- * GET /api/pricing-calculations
- *
- * Lista os cálculos já salvos.
- */
+pricingCalculationRoutes.get(
+  "/trash",
+  listDeletedPricingCalculations,
+);
+
 pricingCalculationRoutes.get(
   "/",
   listPricingCalculations,
 );
 
-/*
- * POST /api/pricing-calculations
- *
- * Calcula e salva no MongoDB.
- */
 pricingCalculationRoutes.post(
   "/",
   createPricingCalculation,
+);
+
+pricingCalculationRoutes.delete(
+  "/:id/permanent",
+  permanentlyDeletePricingCalculation,
+);
+
+pricingCalculationRoutes.delete(
+  "/:id",
+  deletePricingCalculation,
+);
+
+pricingCalculationRoutes.post(
+  "/:id/restore",
+  restorePricingCalculation,
 );
 
 export {

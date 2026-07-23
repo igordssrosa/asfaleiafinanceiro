@@ -4,22 +4,54 @@ import {
   Routes,
 } from "react-router-dom";
 
-import { AppLayout } from "./components/AppLayout";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
-import { PricingCalculatorPage } from "./pages/PricingCalculatorPage";
-import { ProductsPage } from "./pages/ProductsPage";
-import { TransactionsPage } from "./pages/TransactionsPage";
-import { TrashPage } from "./pages/TrashPage";
-import { ReportsPage } from "./pages/ReportsPage";
+import {
+  AppLayout,
+} from "./components/AppLayout";
+
+import {
+  ProtectedRoute,
+} from "./components/ProtectedRoute";
+
+import {
+  AuditLogsPage,
+} from "./pages/AuditLogsPage";
+
+import {
+  DashboardPage,
+} from "./pages/DashboardPage";
+
+import {
+  LoginPage,
+} from "./pages/LoginPage";
+
+import {
+  PricingCalculatorPage,
+} from "./pages/PricingCalculatorPage";
+
+import {
+  ProductsPage,
+} from "./pages/ProductsPage";
+
+import {
+  ReportsPage,
+} from "./pages/ReportsPage";
+
+import {
+  TransactionsPage,
+} from "./pages/TransactionsPage";
+
+import {
+  TrashPage,
+} from "./pages/TrashPage";
 
 function App() {
   return (
     <Routes>
       <Route
         path="/login"
-        element={<LoginPage />}
+        element={
+          <LoginPage />
+        }
       />
 
       <Route
@@ -31,32 +63,51 @@ function App() {
       >
         <Route
           path="/dashboard"
-          element={<DashboardPage />}
+          element={
+            <DashboardPage />
+          }
         />
 
         <Route
           path="/movimentacoes"
-          element={<TransactionsPage />}
-        />
-
-        <Route
-          path="/lixeira"
-          element={<TrashPage />}
+          element={
+            <TransactionsPage />
+          }
         />
 
         <Route
           path="/produtos"
-          element={<ProductsPage />}
+          element={
+            <ProductsPage />
+          }
         />
 
         <Route
           path="/calculadoras"
-          element={<PricingCalculatorPage />}
+          element={
+            <PricingCalculatorPage />
+          }
         />
 
         <Route
           path="/relatorios"
-          element={<ReportsPage />}
+          element={
+            <ReportsPage />
+          }
+        />
+
+        <Route
+          path="/atividades"
+          element={
+            <AuditLogsPage />
+          }
+        />
+
+        <Route
+          path="/lixeira"
+          element={
+            <TrashPage />
+          }
         />
       </Route>
 

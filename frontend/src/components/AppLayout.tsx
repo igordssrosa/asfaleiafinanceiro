@@ -4,19 +4,28 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { useAuth } from "../contexts/AuthContext";
+import {
+  useAuth,
+} from "../contexts/AuthContext";
 
 export function AppLayout() {
-  const { logout } = useAuth();
+  const {
+    logout,
+  } = useAuth();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   async function handleLogout(): Promise<void> {
     await logout();
 
-    navigate("/login", {
-      replace: true,
-    });
+    navigate(
+      "/login",
+      {
+        replace:
+          true,
+      },
+    );
   }
 
   return (
@@ -27,13 +36,17 @@ export function AppLayout() {
             Asfaleia
           </p>
 
-          <h2>Financeiro</h2>
+          <h2>
+            Financeiro
+          </h2>
         </div>
 
         <nav aria-label="Menu principal">
           <NavLink
             to="/dashboard"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -44,7 +57,9 @@ export function AppLayout() {
 
           <NavLink
             to="/movimentacoes"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -55,7 +70,9 @@ export function AppLayout() {
 
           <NavLink
             to="/produtos"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -66,7 +83,9 @@ export function AppLayout() {
 
           <NavLink
             to="/calculadoras"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -77,7 +96,9 @@ export function AppLayout() {
 
           <NavLink
             to="/relatorios"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -87,8 +108,23 @@ export function AppLayout() {
           </NavLink>
 
           <NavLink
+            to="/atividades"
+            className={({
+              isActive,
+            }) =>
+              isActive
+                ? "active-navigation"
+                : undefined
+            }
+          >
+            Atividades
+          </NavLink>
+
+          <NavLink
             to="/lixeira"
-            className={({ isActive }) =>
+            className={({
+              isActive,
+            }) =>
               isActive
                 ? "active-navigation"
                 : undefined
@@ -101,7 +137,9 @@ export function AppLayout() {
         <button
           className="secondary-button"
           type="button"
-          onClick={handleLogout}
+          onClick={
+            handleLogout
+          }
         >
           Sair
         </button>

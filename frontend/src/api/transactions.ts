@@ -136,3 +136,14 @@ export async function listDeletedTransactionsRequest(
     },
   );
 }
+
+export async function permanentlyDeleteTransactionRequest(
+  id: string,
+): Promise<TransactionMessageResponse> {
+  return apiFetch<TransactionMessageResponse>(
+    `/transactions/${id}/permanent`,
+    {
+      method: "DELETE",
+    },
+  );
+}

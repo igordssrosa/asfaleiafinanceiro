@@ -5,6 +5,8 @@ import type {
   ListPricingResponse,
   PricingInput,
   SavePricingResponse,
+  PricingCalculation,
+  PricingMessageResponse,
 } from "../types/pricing";
 
 export async function calculatePricingRequest(
@@ -45,6 +47,63 @@ export async function listPricingRequest(
     `/pricing-calculations?${searchParams.toString()}`,
     {
       method: "GET",
+    },
+  );
+}
+
+export async function deletePricingCalculationRequest(
+  id: string,
+): Promise<PricingMessageResponse> {
+  return apiFetch<PricingMessageResponse>(
+    `/pricing-calculations/${id}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function listDeletedPricingCalculationsRequest(
+  page = 1,
+  limit = 100,
+): Promise<ListPricingResponse> {
+  const searchParams =
+    new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+
+  return apiFetch<ListPricingResponse>(
+    `/pricing-calculations/trash?${searchParams.toString()}`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+export async function restorePricingCalculationRequest(
+  id: string,
+): Promise<{
+  message: string;
+  calculation: PricingCalculation;
+}> {
+  return apiFetch<{
+    message: string;
+    calculation: PricingCalculation;
+  }>(
+    `/pricing-calculations/${id}/restore`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export async function permanentlyDeletePricingCalculationRequest(
+  id: string,
+): Promise<PricingMessageResponse> {
+  return apiFetch<PricingMessageResponse>(
+    `/pricing-calculations/${id}/permanent`,
+    {
+      method: "DELETE",
     },
   );
 }
