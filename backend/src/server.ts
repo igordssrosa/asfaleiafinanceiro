@@ -56,6 +56,79 @@ const frontendUrl =
   "http://localhost:5173";
 
 /* =========================================================
+   LIMITADORES DE REQUISIÇÕES
+   ========================================================= */
+
+/*
+ * Protege apenas tentativas de login.
+ *
+ * Requisições bem-sucedidas não entram na contagem.
+ * Assim, o limite é usado principalmente contra tentativas
+ * repetidas com credenciais incorretas.
+ */
+const loginLimiter =
+  rateLimit({
+    windowMs:
+      15 *
+      60 *
+      1000,
+
+    limit:
+      20,
+
+    standardHeaders:
+      true,
+
+    legacyHeaders:
+      false,
+
+    skipSuccessfulRequests:
+      true,
+
+    message: {
+      message:
+        "Muitas tentativas de login. Aguarde alguns minutos e tente novamente.",
+    },
+  });
+
+/*
+ * Limite geral da API.
+ *
+ * O valor maior evita bloqueios durante o uso normal,
+ * inclusive na página de atividades, que atualiza
+ * periodicamente.
+ */
+const apiLimiter =
+  rateLimit({
+    windowMs:
+      15 *
+      60 *
+      1000,
+
+    limit:
+      1_000,
+
+    standardHeaders:
+      true,
+
+    legacyHeaders:
+      false,
+
+    skip: (
+      request,
+    ) =>
+      request.originalUrl
+        .startsWith(
+          "/api/health",
+        ),
+
+    message: {
+      message:
+        "Muitas requisições. Aguarde alguns minutos e tente novamente.",
+    },
+  });
+
+/* =========================================================
    MIDDLEWARES GERAIS
    ========================================================= */
 
@@ -84,32 +157,19 @@ app.use(
   cookieParser(),
 );
 
-app.use(
-  rateLimit({
-    windowMs:
-      15 *
-      60 *
-      1000,
-
-    limit:
-      200,
-
-    standardHeaders:
-      true,
-
-    legacyHeaders:
-      false,
-
-    message: {
-      message:
-        "Muitas requisições. Aguarde alguns minutos e tente novamente.",
-    },
-  }),
-);
-
 /* =========================================================
    ROTAS DE AUTENTICAÇÃO
    ========================================================= */
+
+/*
+ * O limite mais rígido é aplicado somente ao login.
+ *
+ * POST /api/auth/login
+ */
+app.use(
+  "/api/auth/login",
+  loginLimiter,
+);
 
 /*
  * POST /api/auth/login
@@ -120,6 +180,19 @@ app.use(
 app.use(
   "/api/auth",
   authRoutes,
+);
+
+/* =========================================================
+   LIMITE GERAL DA API
+   ========================================================= */
+
+/*
+ * É registrado depois das rotas de autenticação para não
+ * somar o login, refresh, logout e /me ao limite geral.
+ */
+app.use(
+  "/api",
+  apiLimiter,
 );
 
 /* =========================================================
